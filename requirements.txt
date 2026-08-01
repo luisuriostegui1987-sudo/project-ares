@@ -1,0 +1,5 @@
+# Runtime: the first commit uses only the Python standard library.
+# Target stack per ADR-023 (migrate models to Pydantic v2):
+# pydantic>=2.7
+# Dev:
+# pytest>=8.0
