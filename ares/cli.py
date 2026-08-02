@@ -6,6 +6,7 @@ Sprint-1 goal command:
 
 Runs the research pipeline end to end and prints the structured report.
 """
+
 from __future__ import annotations
 
 import argparse

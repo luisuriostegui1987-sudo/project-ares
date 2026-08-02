@@ -1,4 +1,5 @@
 """ARES domain models (Pydantic v2). See ARES-015 (Glossary & Data Dictionary)."""
+
 from .base import new_id, utcnow
 from .decision import Decision
 from .enums import (

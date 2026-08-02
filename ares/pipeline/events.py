@@ -6,6 +6,7 @@ Output: list[Event] (domain model), sorted by occurs_at.
 The Event/catalyst semantics live in ares.models.event; this stage only
 gathers and validates them.
 """
+
 from __future__ import annotations
 
 import logging
@@ -69,6 +70,8 @@ def gather_events(entity: Entity, provider: EventsProvider) -> list[Event]:
     ordered = sorted(events, key=lambda e: e.occurs_at)
     logger.info(
         "events: %d gathered for %s (%d catalysts)",
-        len(ordered), entity.entity_id, sum(1 for e in ordered if e.is_catalyst),
+        len(ordered),
+        entity.entity_id,
+        sum(1 for e in ordered if e.is_catalyst),
     )
     return ordered

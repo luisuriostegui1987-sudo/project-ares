@@ -7,6 +7,7 @@ A Signal is *computed*, never sourced (ARES-005 Sec 7). Rules here are plain
 deterministic code (Constitution: risk/scores are code, never LLM judgment),
 and they only consume facts where usable_for_calculation is True.
 """
+
 from __future__ import annotations
 
 import logging
@@ -23,9 +24,7 @@ RULE_VERSION = "SIGNAL-1.0"
 
 def _usable_metric(facts: list[Fact], metric_name: str) -> Fact | None:
     """Return the newest usable fact for a metric, or None."""
-    candidates = [
-        f for f in facts if f.metric_name == metric_name and f.usable_for_calculation
-    ]
+    candidates = [f for f in facts if f.metric_name == metric_name and f.usable_for_calculation]
     if not candidates:
         return None
     return max(candidates, key=lambda f: f.as_of_timestamp)
@@ -40,8 +39,9 @@ def revenue_growth_signal(entity: Entity, facts: list[Fact]) -> Signal | None:
     current = _usable_metric(facts, METRIC_REVENUE_TTM_CURRENT)
     prior = _usable_metric(facts, METRIC_REVENUE_TTM_PRIOR)
     if current is None or prior is None:
-        logger.info("signals: revenue growth skipped for %s (missing usable facts)",
-                    entity.entity_id)
+        logger.info(
+            "signals: revenue growth skipped for %s (missing usable facts)", entity.entity_id
+        )
         return None
     if not isinstance(current.value, (int, float)) or not isinstance(prior.value, (int, float)):
         logger.warning("signals: revenue facts for %s are non-numeric", entity.entity_id)
@@ -50,8 +50,10 @@ def revenue_growth_signal(entity: Entity, facts: list[Fact]) -> Signal | None:
         logger.warning("signals: prior revenue is zero for %s", entity.entity_id)
         return None
     growth_pct = (float(current.value) - float(prior.value)) / float(prior.value) * 100.0
-    direction = Direction.LONG if growth_pct > 0 else (
-        Direction.SHORT if growth_pct < 0 else Direction.NEUTRAL
+    direction = (
+        Direction.LONG
+        if growth_pct > 0
+        else (Direction.SHORT if growth_pct < 0 else Direction.NEUTRAL)
     )
     return Signal(
         entity_id=entity.entity_id,

@@ -4,6 +4,7 @@ Stage order (approved): Entity -> Context -> Events -> Facts -> Evidence ->
 Signals -> Structured Research Output. Depends on ares.models; never the
 other way around.
 """
+
 from .context import ContextProvider, EntityContext, MockContextProvider, build_context
 from .entity import Entity, EntityProvider, MockEntityProvider, resolve_entity
 from .events import EventsProvider, MockEventsProvider, gather_events

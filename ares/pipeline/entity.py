@@ -6,6 +6,7 @@ Output: Entity — the resolved instrument every later stage keys on.
 Providers are swappable: MockEntityProvider ships now; a real reference-data
 provider implements the same EntityProvider protocol later.
 """
+
 from __future__ import annotations
 
 import logging

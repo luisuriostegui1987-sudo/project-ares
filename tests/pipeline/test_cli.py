@@ -1,4 +1,5 @@
 """CLI tests: `ares analyze NVDA`."""
+
 from __future__ import annotations
 
 import json

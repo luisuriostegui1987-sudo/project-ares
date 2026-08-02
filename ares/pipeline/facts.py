@@ -7,6 +7,7 @@ A Fact is the ONLY form in which a number enters the pipeline (Constitution
 Sec 5). Mock facts are explicitly labeled with mock:// sources so they can
 never be mistaken for real market data.
 """
+
 from __future__ import annotations
 
 import logging
@@ -73,7 +74,10 @@ def gather_facts(entity: Entity, provider: FactsProvider) -> list[Fact]:
         raise ValueError(f"Facts {foreign} do not belong to entity {entity.entity_id!r}.")
     usable = sum(1 for f in facts if f.usable_for_calculation)
     if facts and usable == 0:
-        logger.warning("facts: none of the %d facts for %s are usable for calculation",
-                       len(facts), entity.entity_id)
+        logger.warning(
+            "facts: none of the %d facts for %s are usable for calculation",
+            len(facts),
+            entity.entity_id,
+        )
     logger.info("facts: %d gathered for %s (%d usable)", len(facts), entity.entity_id, usable)
     return facts

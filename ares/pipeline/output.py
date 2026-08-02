@@ -6,6 +6,7 @@ Output: ResearchReport — validated, serializable, auditable.
 The report validator re-checks cross-stage integrity: every claim and signal
 must cite fact_ids that are actually present in the report.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -54,7 +55,9 @@ class ResearchReport(BaseModel):
         for signal in self.signals:
             missing = set(signal.source_fact_ids) - known
             if missing:
-                raise ValueError(f"Signal {signal.signal_id} cites unknown facts: {sorted(missing)}.")
+                raise ValueError(
+                    f"Signal {signal.signal_id} cites unknown facts: {sorted(missing)}."
+                )
         return self
 
 
@@ -77,10 +80,7 @@ def render_text(report: ResearchReport) -> str:
             f"    - {f.metric_name} = {f.value} {f.unit or ''} [{f.knowledge_class.value}]"
             for f in report.facts
         ],
-        (
-            f"  evidence: {report.evidence.summary}"
-            f" (overall: {report.evidence.overall_class.value})"
-        ),
+        (f"  evidence: {report.evidence.summary} (overall: {report.evidence.overall_class.value})"),
         f"  signals ({len(report.signals)}):",
         *[
             f"    - {s.signal_type} = {s.measured_value} (baseline {s.baseline_value}, "

@@ -1,4 +1,5 @@
 """Stage 3 (Events) unit tests."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime

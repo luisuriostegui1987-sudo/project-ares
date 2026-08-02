@@ -6,6 +6,7 @@ Output: EntityContext — what the business is, so later stages read facts in co
 Context is descriptive prose/metadata, NOT numbers. Numbers must arrive as
 Fact objects (Constitution Sec 5) in the Facts stage.
 """
+
 from __future__ import annotations
 
 import logging
@@ -76,6 +77,10 @@ def build_context(entity: Entity, provider: ContextProvider) -> EntityContext:
         raise ValueError(
             f"Context entity_id {ctx.entity_id!r} does not match entity {entity.entity_id!r}."
         )
-    logger.info("context: built for %s (%d products, %d competitors)",
-                entity.entity_id, len(ctx.key_products), len(ctx.competitors))
+    logger.info(
+        "context: built for %s (%d products, %d competitors)",
+        entity.entity_id,
+        len(ctx.key_products),
+        len(ctx.competitors),
+    )
     return ctx

@@ -3,6 +3,7 @@ validators, invalid-input rejection, and serialization round-trips.
 
 Run: pytest -q   (requires pydantic>=2.7, pytest>=8)
 """
+
 from __future__ import annotations
 
 import sys
@@ -37,10 +38,14 @@ def _utc(y, m, d):
 
 def _fact():
     return Fact(
-        entity_id="CRWV", metric_name="revenue_q1_2026", value=2_080_000_000,
-        unit="USD", source_name="CoreWeave IR / CNBC",
+        entity_id="CRWV",
+        metric_name="revenue_q1_2026",
+        value=2_080_000_000,
+        unit="USD",
+        source_name="CoreWeave IR / CNBC",
         source_id_or_url="https://www.cnbc.com/2026/05/07/coreweave-crwv-q1-earnings-report-2026.html",
-        as_of_timestamp=_utc(2026, 5, 7), knowledge_class=KnowledgeClass.VERIFIED_FACT,
+        as_of_timestamp=_utc(2026, 5, 7),
+        knowledge_class=KnowledgeClass.VERIFIED_FACT,
     )
 
 
@@ -65,35 +70,70 @@ def test_fact_calc_gate():
 
 def test_verified_fact_requires_source():
     with pytest.raises(ValidationError):
-        Fact(entity_id="CRWV", metric_name="x", value=1, source_name="",
-             source_id_or_url="", as_of_timestamp=_utc(2026, 5, 7),
-             knowledge_class=KnowledgeClass.VERIFIED_FACT)
+        Fact(
+            entity_id="CRWV",
+            metric_name="x",
+            value=1,
+            source_name="",
+            source_id_or_url="",
+            as_of_timestamp=_utc(2026, 5, 7),
+            knowledge_class=KnowledgeClass.VERIFIED_FACT,
+        )
 
 
 def test_signal_builds_and_rejects_negative():
-    s = Signal(entity_id="CRWV", signal_type="abnormal_volume", observed_at=_utc(2026, 8, 1),
-               measured_value=3.2, baseline_value=1.0, anomaly_strength=2.2)
+    s = Signal(
+        entity_id="CRWV",
+        signal_type="abnormal_volume",
+        observed_at=_utc(2026, 8, 1),
+        measured_value=3.2,
+        baseline_value=1.0,
+        anomaly_strength=2.2,
+    )
     assert s.signal_type == "abnormal_volume"
     with pytest.raises(ValidationError):
-        Signal(entity_id="CRWV", signal_type="x", observed_at=_utc(2026, 8, 1),
-               measured_value=1.0, baseline_value=1.0, anomaly_strength=-1.0)
+        Signal(
+            entity_id="CRWV",
+            signal_type="x",
+            observed_at=_utc(2026, 8, 1),
+            measured_value=1.0,
+            baseline_value=1.0,
+            anomaly_strength=-1.0,
+        )
 
 
 def test_catalyst_and_evidence():
-    ev = Event(entity_id="CRWV", event_type=EventType.EARNINGS, title="Q2 2026",
-               occurs_at=_utc(2026, 8, 11), is_catalyst=True, expected_effect="high-impact print")
+    ev = Event(
+        entity_id="CRWV",
+        event_type=EventType.EARNINGS,
+        title="Q2 2026",
+        occurs_at=_utc(2026, 8, 11),
+        is_catalyst=True,
+        expected_effect="high-impact print",
+    )
     assert ev.is_catalyst
-    e = Evidence(subject="CRWV growth",
-                 claims=[Claim(statement="Revenue doubled YoY",
-                               knowledge_class=KnowledgeClass.VERIFIED_FACT,
-                               supporting_fact_ids=["fact_x"])])
+    e = Evidence(
+        subject="CRWV growth",
+        claims=[
+            Claim(
+                statement="Revenue doubled YoY",
+                knowledge_class=KnowledgeClass.VERIFIED_FACT,
+                supporting_fact_ids=["fact_x"],
+            )
+        ],
+    )
     assert e.overall_class == KnowledgeClass.VERIFIED_FACT
 
 
 def test_catalyst_without_effect_rejected():
     with pytest.raises(ValidationError):
-        Event(entity_id="CRWV", event_type=EventType.EARNINGS, title="Q2",
-              occurs_at=_utc(2026, 8, 11), is_catalyst=True)
+        Event(
+            entity_id="CRWV",
+            event_type=EventType.EARNINGS,
+            title="Q2",
+            occurs_at=_utc(2026, 8, 11),
+            is_catalyst=True,
+        )
 
 
 def test_claim_without_support_rejected():
@@ -110,15 +150,24 @@ def test_thesis_builds():
 
 def test_thesis_requires_hypothesis():
     with pytest.raises(ValidationError):
-        Thesis(entity_id="CRWV", thesis_summary="s", hypothesis="too short",
-               bear_case="a real bear case here", invalidation_conditions="drops 20%")
+        Thesis(
+            entity_id="CRWV",
+            thesis_summary="s",
+            hypothesis="too short",
+            bear_case="a real bear case here",
+            invalidation_conditions="drops 20%",
+        )
 
 
 def test_thesis_without_bear_case_rejected():
     with pytest.raises(ValidationError):
-        Thesis(entity_id="CRWV", thesis_summary="s",
-               hypothesis="A sufficiently long testable central claim goes here.",
-               bear_case="", invalidation_conditions="drops 20%")
+        Thesis(
+            entity_id="CRWV",
+            thesis_summary="s",
+            hypothesis="A sufficiently long testable central claim goes here.",
+            bear_case="",
+            invalidation_conditions="drops 20%",
+        )
 
 
 def test_scores_range_invalid():
@@ -128,15 +177,23 @@ def test_scores_range_invalid():
 
 def test_human_gate_on_approve():
     with pytest.raises(ValidationError):
-        Decision(thesis_id="t1", decision=InvestmentDecisionType.APPROVE,
-                 rationale="model likes it",
-                 risk_result=RiskResult(verdict=RiskVerdict.PASS, recommended_paper_size=2.0))
+        Decision(
+            thesis_id="t1",
+            decision=InvestmentDecisionType.APPROVE,
+            rationale="model likes it",
+            risk_result=RiskResult(verdict=RiskVerdict.PASS, recommended_paper_size=2.0),
+        )
     with pytest.raises(ValidationError):
-        Decision(thesis_id="t1", decision=InvestmentDecisionType.APPROVE, rationale="override",
-                 human_approved=True,
-                 risk_result=RiskResult(verdict=RiskVerdict.FAIL, recommended_paper_size=0.0))
-    ok = Decision(thesis_id="t1", decision=InvestmentDecisionType.WATCHLIST,
-                  rationale="No edge; watchlist.")
+        Decision(
+            thesis_id="t1",
+            decision=InvestmentDecisionType.APPROVE,
+            rationale="override",
+            human_approved=True,
+            risk_result=RiskResult(verdict=RiskVerdict.FAIL, recommended_paper_size=0.0),
+        )
+    ok = Decision(
+        thesis_id="t1", decision=InvestmentDecisionType.WATCHLIST, rationale="No edge; watchlist."
+    )
     assert ok.decision == InvestmentDecisionType.WATCHLIST
 
 

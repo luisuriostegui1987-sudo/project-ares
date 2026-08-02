@@ -1,4 +1,5 @@
 """Stage 5->6 (Signals) unit tests: deterministic, guarded, fact-cited."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -20,7 +21,9 @@ def _nvda() -> Entity:
     return resolve_entity("NVDA", MockEntityProvider())
 
 
-def _rev_fact(metric: str, value: float | str, knowledge_class=KnowledgeClass.HIGH_CONFIDENCE) -> Fact:
+def _rev_fact(
+    metric: str, value: float | str, knowledge_class=KnowledgeClass.HIGH_CONFIDENCE
+) -> Fact:
     return Fact(
         entity_id="NVDA",
         metric_name=metric,

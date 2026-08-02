@@ -1,4 +1,5 @@
 """Stage 7 (Output) + orchestrator integration tests."""
+
 from __future__ import annotations
 
 import pytest

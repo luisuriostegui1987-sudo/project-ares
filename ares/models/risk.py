@@ -3,6 +3,7 @@
 Replaces the bare RiskVerdict on Thesis/Decision. Recommended size lives here;
 approved size lives on Decision; actual size lives on Position.
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field

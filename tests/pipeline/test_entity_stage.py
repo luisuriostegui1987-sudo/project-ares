@@ -1,4 +1,5 @@
 """Stage 1 (Entity) unit tests."""
+
 from __future__ import annotations
 
 import pytest

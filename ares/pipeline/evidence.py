@@ -8,6 +8,7 @@ strictly from sourced facts via deterministic templates — no free-form
 assertions, no computed values. Knowledge class is inherited from the cited
 fact, never upgraded (RULE 17: never launder opinion into fact).
 """
+
 from __future__ import annotations
 
 import logging
@@ -56,10 +57,12 @@ def derive_evidence(entity: Entity, facts: list[Fact]) -> Evidence:
         claims=claims,
         supporting_fact_ids=sorted({fid for c in claims for fid in c.supporting_fact_ids}),
         summary=f"{len(claims)} deterministic claims over {len(usable)} usable facts "
-                f"({len(skipped)} excluded).",
+        f"({len(skipped)} excluded).",
     )
     logger.info(
         "evidence: %d claims for %s (overall class: %s)",
-        len(claims), entity.entity_id, evidence.overall_class.value,
+        len(claims),
+        entity.entity_id,
+        evidence.overall_class.value,
     )
     return evidence

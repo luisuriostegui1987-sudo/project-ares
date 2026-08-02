@@ -3,6 +3,7 @@
 A Fact is the ONLY form in which a number reaches an LLM (Constitution Sec 5).
 A Fact is *sourced*; a Signal is *computed* — do not confuse them.
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -33,14 +34,10 @@ class Fact(BaseModel):
             self.source_name and self.source_id_or_url
         ):
             raise ValueError(
-                "A Verified Fact requires source_name and source_id_or_url "
-                "(Constitution Sec 5)."
+                "A Verified Fact requires source_name and source_id_or_url (Constitution Sec 5)."
             )
         return self
 
     @property
     def usable_for_calculation(self) -> bool:
-        return (
-            self.knowledge_class.usable_for_calculation
-            and self.validation_status == "valid"
-        )
+        return self.knowledge_class.usable_for_calculation and self.validation_status == "valid"

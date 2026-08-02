@@ -5,6 +5,7 @@
 Providers default to the Sprint-1 mocks; inject real implementations of the
 same protocols to go live. No Risk, no Decision, no Portfolio in this slice.
 """
+
 from __future__ import annotations
 
 import logging

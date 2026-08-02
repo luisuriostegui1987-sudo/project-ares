@@ -1,4 +1,5 @@
 """Make the repo root importable for every test module."""
+
 from __future__ import annotations
 
 import sys
