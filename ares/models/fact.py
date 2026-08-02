@@ -28,7 +28,7 @@ class Fact(BaseModel):
     version: int = 1
 
     @model_validator(mode="after")
-    def _verified_needs_source(self) -> "Fact":
+    def _verified_needs_source(self) -> Fact:
         if self.knowledge_class == KnowledgeClass.VERIFIED_FACT and not (
             self.source_name and self.source_id_or_url
         ):

@@ -30,7 +30,7 @@ class Claim(BaseModel):
     claim_id: str = Field(default_factory=lambda: new_id("claim"))
 
     @model_validator(mode="after")
-    def _support(self) -> "Claim":
+    def _support(self) -> Claim:
         if self.knowledge_class in (
             KnowledgeClass.VERIFIED_FACT,
             KnowledgeClass.HIGH_CONFIDENCE,

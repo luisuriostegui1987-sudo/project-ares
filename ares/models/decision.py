@@ -30,7 +30,7 @@ class Decision(BaseModel):
     decision_id: str = Field(default_factory=lambda: new_id("dec"))
 
     @model_validator(mode="after")
-    def _human_gate(self) -> "Decision":
+    def _human_gate(self) -> Decision:
         if self.decision == InvestmentDecisionType.APPROVE:
             if not self.human_approved:
                 raise ValueError(

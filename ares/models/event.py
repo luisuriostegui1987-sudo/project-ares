@@ -23,7 +23,7 @@ class Event(BaseModel):
     version: int = 1
 
     @model_validator(mode="after")
-    def _catalyst_needs_effect(self) -> "Event":
+    def _catalyst_needs_effect(self) -> Event:
         if self.is_catalyst and self.expected_direction is None and not self.expected_effect:
             raise ValueError("A catalyst must state expected_direction or expected_effect.")
         return self

@@ -6,19 +6,19 @@ Run: pytest -q   (requires pydantic>=2.7, pytest>=8)
 from __future__ import annotations
 
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
 
 sys.path.insert(0, __file__.rsplit("/tests/", 1)[0])
 
-from ares.models import (  # noqa: E402
+from ares.models import (
     Claim,
     Decision,
-    Evidence,
     Event,
     EventType,
+    Evidence,
     Fact,
     InvestmentDecisionType,
     KnowledgeClass,
@@ -32,7 +32,7 @@ from ares.models import (  # noqa: E402
 
 
 def _utc(y, m, d):
-    return datetime(y, m, d, tzinfo=timezone.utc)
+    return datetime(y, m, d, tzinfo=UTC)
 
 
 def _fact():
