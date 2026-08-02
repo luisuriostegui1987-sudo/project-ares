@@ -3,9 +3,16 @@
 ## Sprint 1 — the vertical slice
 
 ```bash
-ares analyze NVDA            # or: python -m ares analyze NVDA
-ares analyze NVDA --json     # canonical JSON report
+ares analyze NVDA                       # mock mode (labeled sample data)
+ares analyze NVDA --json                # canonical JSON report
+ares analyze NVDA --data-mode live      # real SEC EDGAR data (Sprint 2)
 ```
+
+LIVE mode ingests real SEC EDGAR company facts as immutable, append-only
+`InstitutionalFact` records (ARES-FACT-001: deterministic `fact_key`,
+SHA-256 `content_hash`, exact filing provenance, point-in-time safety) and
+never falls back to mocks on failure. Set `ARES_SEC_USER_AGENT` to your own
+contact string per SEC fair-access policy.
 
 Runs the approved Research Pipeline end to end:
 Entity → Context → Events → Facts → Evidence → Signals → Structured Research

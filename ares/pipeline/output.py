@@ -14,7 +14,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, model_validator
 
-from ares.models import Event, Evidence, Fact, Signal
+from ares.models import Event, Evidence, Fact, KnowledgeClass, Signal
 from ares.models.base import new_id, utcnow
 
 from .context import EntityContext
@@ -26,9 +26,10 @@ MOCK_DATA_WARNING = "WARNING: This report uses mock data and is not investment r
 
 
 class DataMode(str, Enum):
-    """Provenance of the data behind a report. Sprint 1 ships MOCK only."""
+    """Provenance of the data behind a report."""
 
     MOCK = "MOCK"
+    LIVE = "LIVE"
 
 
 class ResearchReport(BaseModel):
@@ -68,6 +69,13 @@ class ResearchReport(BaseModel):
                 raise ValueError(
                     f"Signal {signal.signal_id} cites unknown facts: {sorted(missing)}."
                 )
+        # Structural governance rule: mock data can never carry Verified Fact.
+        if self.data_mode is DataMode.MOCK:
+            verified = [
+                f.fact_id for f in self.facts if f.knowledge_class is KnowledgeClass.VERIFIED_FACT
+            ]
+            if verified:
+                raise ValueError(f"MOCK report cannot contain Verified Fact facts: {verified}.")
         return self
 
 
