@@ -133,9 +133,12 @@ def test_migrate_command_is_idempotent_and_silent_about_dsn(
     assert "migrations" in combined
 
 
+def _blueprint_text() -> str:
+    return (Path(__file__).resolve().parents[2] / "render.yaml").read_text("utf-8")
+
+
 def test_render_blueprint_contains_no_secrets() -> None:
-    blueprint = Path(__file__).resolve().parents[2] / "render.yaml"
-    text = blueprint.read_text("utf-8")
+    text = _blueprint_text()
     assert text.count("sync: false") == 3  # SEC UA + UI user + UI password
     assert "fromDatabase" in text  # DSN injected, never written
     assert "healthCheckPath: /health" in text
@@ -144,3 +147,22 @@ def test_render_blueprint_contains_no_secrets() -> None:
     assert "ARES_ENV" in text and "production" in text
     for forbidden in ("postgres://", "postgresql://", "password:", "secret:"):
         assert forbidden not in text
+
+
+def test_render_blueprint_pins_python_3128_explicitly() -> None:
+    """A real PYTHON_VERSION envVar — not a comment or descriptive field."""
+    text = _blueprint_text()
+    assert "- key: PYTHON_VERSION" in text
+    assert 'value: "3.12.8"' in text
+
+
+def test_render_blueprint_database_is_not_publicly_reachable() -> None:
+    text = _blueprint_text()
+    assert "ipAllowList: []" in text  # empty allow list: no public access
+    # The app connects over the private network via the internal string.
+    assert "property: connectionString" in text
+
+
+def test_render_blueprint_service_and_database_share_region() -> None:
+    text = _blueprint_text()
+    assert text.count("region: oregon") == 2  # web service AND database

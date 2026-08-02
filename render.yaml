@@ -41,4 +41,9 @@ services:
 databases:
   - name: ares-postgres
     plan: basic-256mb
+    region: oregon
     postgresMajorVersion: "16"
+    # Empty allow list: the database is NOT reachable from the public
+    # internet. The web service connects over Render's private network via
+    # fromDatabase.connectionString (the internal connection string).
+    ipAllowList: []
