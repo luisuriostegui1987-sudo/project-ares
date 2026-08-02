@@ -20,9 +20,11 @@ from .entity import Entity
 
 logger = logging.getLogger(__name__)
 
-# Canonical metric names the Sprint-1 signal rules understand.
+# Canonical metric names the signal rules understand.
 METRIC_REVENUE_TTM_CURRENT = "revenue_ttm_current_usd"
 METRIC_REVENUE_TTM_PRIOR = "revenue_ttm_prior_year_usd"
+METRIC_REVENUE_FY_CURRENT = "revenue_fy_current_usd"
+METRIC_REVENUE_FY_PRIOR = "revenue_fy_prior_year_usd"
 METRIC_GROSS_MARGIN_PCT = "gross_margin_pct"
 
 

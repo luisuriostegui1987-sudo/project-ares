@@ -15,11 +15,22 @@ import logging
 from ares.models import Direction, Fact, Signal
 
 from .entity import Entity
-from .facts import METRIC_REVENUE_TTM_CURRENT, METRIC_REVENUE_TTM_PRIOR
+from .facts import (
+    METRIC_REVENUE_FY_CURRENT,
+    METRIC_REVENUE_FY_PRIOR,
+    METRIC_REVENUE_TTM_CURRENT,
+    METRIC_REVENUE_TTM_PRIOR,
+)
 
 logger = logging.getLogger(__name__)
 
-RULE_VERSION = "SIGNAL-1.0"
+RULE_VERSION = "SIGNAL-1.2"
+
+# Canonical revenue pairs, strongest first: TTM preferred, fiscal-year fallback.
+_REVENUE_PAIRS = (
+    (METRIC_REVENUE_TTM_CURRENT, METRIC_REVENUE_TTM_PRIOR, "TTM"),
+    (METRIC_REVENUE_FY_CURRENT, METRIC_REVENUE_FY_PRIOR, "FY"),
+)
 
 
 def _usable_metric(facts: list[Fact], metric_name: str) -> Fact | None:
@@ -36,13 +47,32 @@ def revenue_growth_signal(entity: Entity, facts: list[Fact]) -> Signal | None:
     Returns None (with a log line) when inputs are missing or unusable —
     a missing signal is a valid outcome, a guessed one is not.
     """
-    current = _usable_metric(facts, METRIC_REVENUE_TTM_CURRENT)
-    prior = _usable_metric(facts, METRIC_REVENUE_TTM_PRIOR)
+    current = prior = None
+    window = ""
+    for current_name, prior_name, window in _REVENUE_PAIRS:
+        current = _usable_metric(facts, current_name)
+        prior = _usable_metric(facts, prior_name)
+        if current is not None and prior is not None:
+            break
     if current is None or prior is None:
         logger.info(
             "signals: revenue growth skipped for %s (missing usable facts)", entity.entity_id
         )
         return None
+    if window == "FY":
+        # Comparable-period guard: an FY pair's as_of dates are fiscal period
+        # ends, so YoY comparability requires them ~1 year apart. A pair from
+        # non-consecutive fiscal years must NOT produce a YoY-labeled signal.
+        # (TTM pair dates are stamped at one measurement time by construction.)
+        gap_days = (current.as_of_timestamp - prior.as_of_timestamp).days
+        if not 300 <= gap_days <= 430:
+            logger.warning(
+                "signals: FY revenue pair for %s is not YoY-comparable "
+                "(%d days between period ends); suppressing signal",
+                entity.entity_id,
+                gap_days,
+            )
+            return None
     if not isinstance(current.value, (int, float)) or not isinstance(prior.value, (int, float)):
         logger.warning("signals: revenue facts for %s are non-numeric", entity.entity_id)
         return None
@@ -61,6 +91,7 @@ def revenue_growth_signal(entity: Entity, facts: list[Fact]) -> Signal | None:
         observed_at=current.as_of_timestamp,
         measured_value=round(growth_pct, 2),
         baseline_value=0.0,
+        lookback_window=window,
         source_fact_ids=[current.fact_id, prior.fact_id],
         direction=direction,
         rule_version=RULE_VERSION,

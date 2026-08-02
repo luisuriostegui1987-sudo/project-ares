@@ -13,7 +13,7 @@ import argparse
 import logging
 import sys
 
-from ares.pipeline import ResearchPipeline, render_text
+from ares.pipeline import DataMode, ResearchPipeline, render_text
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -25,6 +25,13 @@ def _build_parser() -> argparse.ArgumentParser:
     analyze.add_argument("ticker", help="Ticker symbol, e.g. NVDA.")
     analyze.add_argument("--json", action="store_true", help="Print the full report as JSON.")
     analyze.add_argument("--out", metavar="FILE", help="Also write the JSON report to FILE.")
+    analyze.add_argument(
+        "--data-mode",
+        choices=["mock", "live"],
+        default="mock",
+        help="mock: labeled sample data (default). live: real SEC EDGAR data; "
+        "fails loudly on error, never falls back to mocks.",
+    )
     return parser
 
 
@@ -36,8 +43,15 @@ def main(argv: list[str] | None = None) -> int:
         stream=sys.stderr,
     )
     if args.command == "analyze":
+        from ares.providers.edgar import EdgarError
+
         try:
-            report = ResearchPipeline().run(args.ticker)
+            mode = DataMode(args.data_mode.upper())
+            report = ResearchPipeline(data_mode=mode).run(args.ticker)
+        except EdgarError as exc:
+            print(f"error: live EDGAR retrieval failed — {exc}", file=sys.stderr)
+            print("note: live mode never falls back to mock data.", file=sys.stderr)
+            return 1
         except (LookupError, ValueError) as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 1
