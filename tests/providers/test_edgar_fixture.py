@@ -132,7 +132,11 @@ def test_pipeline_fact_adaptation_keeps_ids_and_provenance():
 
 
 def test_provider_stores_facts_and_marks_them_valid():
-    provider = EdgarFactsProvider(FixtureEdgarClient())  # type: ignore[arg-type]
+    from ares.facts import InMemoryFactStore
+
+    # Explicit fresh store: assertions below scan the whole store, so they
+    # must not depend on whatever default_repository() resolves to.
+    provider = EdgarFactsProvider(FixtureEdgarClient(), store=InMemoryFactStore())  # type: ignore[arg-type]
     entity = Entity(entity_id="NVDA", ticker="NVDA", name="NVIDIA CORP")
     provider.facts_for(entity)
     stored = provider.store.all_facts()

@@ -94,23 +94,37 @@ class InMemoryFactStore:
         return [f for f in visible if f.fact_id not in superseded]
 
     def validation_status(self, fact_id: str) -> ValidationStatus:
-        """Derived: latest validation event, else PENDING."""
+        """Derived: latest validation event, else PENDING.
+
+        Equal occurred_at timestamps break ties by insertion (append) order —
+        the same deterministic semantics as event_seq in PostgreSQL.
+        """
         self._require_fact(fact_id)
-        events = [e for e in self._validation_events if e.fact_id == fact_id]
+        events = [
+            (e.occurred_at, seq, e)
+            for seq, e in enumerate(self._validation_events)
+            if e.fact_id == fact_id
+        ]
         if not events:
             return ValidationStatus.PENDING
-        return max(events, key=lambda e: e.occurred_at).status
+        return max(events, key=lambda t: (t[0], t[1]))[2].status
 
     def freshness_status(self, fact_id: str) -> FreshnessStatus:
-        """Derived: latest freshness event, else FRESH."""
+        """Derived: latest freshness event, else FRESH. Ties: insertion order."""
         self._require_fact(fact_id)
-        events = [e for e in self._freshness_events if e.fact_id == fact_id]
+        events = [
+            (e.occurred_at, seq, e)
+            for seq, e in enumerate(self._freshness_events)
+            if e.fact_id == fact_id
+        ]
         if not events:
             return FreshnessStatus.FRESH
-        return max(events, key=lambda e: e.occurred_at).status
+        return max(events, key=lambda t: (t[0], t[1]))[2].status
 
     def validation_history(self, fact_id: str) -> list[FactValidationEvent]:
-        return [e for e in self._validation_events if e.fact_id == fact_id]
+        """occurred_at ascending; equal timestamps keep insertion order."""
+        mine = [e for e in self._validation_events if e.fact_id == fact_id]
+        return sorted(mine, key=lambda e: e.occurred_at)  # stable sort keeps append order
 
     def usable_for_calculation(self, fact_id: str) -> bool:
         """Content gate AND event-derived validation gate (VALID required)."""

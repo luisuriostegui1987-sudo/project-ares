@@ -41,3 +41,42 @@ jobs:
         run: |
           ares analyze NVDA --json > /dev/null
           ares analyze NVDA | grep -q "WARNING"
+
+  postgres-contract:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ares
+          POSTGRES_PASSWORD: ares-ci-throwaway
+          POSTGRES_DB: ares_facts
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ares"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ARES_PG_DSN: postgresql://ares:ares-ci-throwaway@localhost:5432/ares_facts
+      ARES_FACT_STORE: postgres  # explicit persistence mode (Gate 2)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install (with postgres extra)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e ".[postgres]"
+
+      - name: repository contract suite (memory + postgres, identical behavior)
+        run: pytest tests/facts/test_repository_contract.py -v
+
+      - name: full suite against postgres-backed default repository
+        run: pytest -q
