@@ -1,7 +1,7 @@
 """Stage 1 — Entity resolution: a raw ticker becomes a validated Entity.
 
 Input:  ticker string (e.g. "NVDA").
-Output: Entity — the resolved instrument every later stage keys on.
+Output: Entity (canonical model in ares.models.entity).
 
 Providers are swappable: MockEntityProvider ships now; a real reference-data
 provider implements the same EntityProvider protocol later.
@@ -10,32 +10,12 @@ provider implements the same EntityProvider protocol later.
 from __future__ import annotations
 
 import logging
-import re
 from typing import ClassVar, Protocol
 
-from pydantic import BaseModel, Field, field_validator
+from ares.models import Entity
+from ares.models.entity import TICKER_RE
 
 logger = logging.getLogger(__name__)
-
-_TICKER_RE = re.compile(r"^[A-Z][A-Z0-9.\-]{0,9}$")
-
-
-class Entity(BaseModel):
-    """A resolved, analyzable listed company (ARES-015: Entity)."""
-
-    entity_id: str = Field(min_length=1, description="Canonical id; v1 uses the ticker itself.")
-    ticker: str
-    name: str = Field(min_length=1)
-    exchange: str | None = None
-    sector: str | None = None
-    industry: str | None = None
-
-    @field_validator("ticker")
-    @classmethod
-    def _ticker_format(cls, v: str) -> str:
-        if not _TICKER_RE.match(v):
-            raise ValueError(f"Invalid ticker format: {v!r} (expected e.g. 'NVDA', 'BRK.B').")
-        return v
 
 
 class EntityProvider(Protocol):
@@ -78,7 +58,7 @@ class MockEntityProvider:
 def resolve_entity(ticker: str, provider: EntityProvider) -> Entity:
     """Normalize + validate the ticker, then resolve it through the provider."""
     normalized = ticker.strip().upper()
-    if not _TICKER_RE.match(normalized):
+    if not TICKER_RE.match(normalized):
         raise ValueError(f"Invalid ticker: {ticker!r}.")
     entity = provider.resolve(normalized)
     if entity.entity_id != normalized:

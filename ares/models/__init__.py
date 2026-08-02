@@ -2,6 +2,7 @@
 
 from .base import new_id, utcnow
 from .decision import Decision
+from .entity import Entity
 from .enums import (
     ClaimType,
     Direction,
@@ -25,6 +26,7 @@ __all__ = [
     "ClaimType",
     "Decision",
     "Direction",
+    "Entity",
     "Event",
     "EventType",
     "Evidence",
