@@ -17,6 +17,7 @@ from .enums import (
 from .event import Event
 from .evidence import Claim, Evidence
 from .fact import Fact
+from .ifact import FactFreshnessEvent, FactValidationEvent, InstitutionalFact
 from .risk import RiskResult
 from .signal import Signal
 from .thesis import Scores, Thesis
@@ -31,6 +32,9 @@ __all__ = [
     "EventType",
     "Evidence",
     "Fact",
+    "FactFreshnessEvent",
+    "FactValidationEvent",
+    "InstitutionalFact",
     "InvestmentDecisionType",
     "KnowledgeClass",
     "ProcessState",
