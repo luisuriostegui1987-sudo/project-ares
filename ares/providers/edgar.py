@@ -26,7 +26,7 @@ import urllib.request
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
-from ares.facts import InMemoryFactStore
+from ares.facts import FactRepository, default_repository
 from ares.models import Entity, Event, Fact, KnowledgeClass
 from ares.models.base import utcnow
 from ares.models.ifact import (
@@ -459,9 +459,10 @@ class NoEventsProvider:
 class EdgarFactsProvider:
     """Live FactsProvider: EDGAR -> InstitutionalFacts (stored) -> pipeline Facts."""
 
-    def __init__(self, client: EdgarClient, store: InMemoryFactStore | None = None) -> None:
+    def __init__(self, client: EdgarClient, store: FactRepository | None = None) -> None:
         self.client = client
-        self.store = store or InMemoryFactStore()
+        # default_repository(): Postgres when ARES_PG_DSN is set, else in-memory.
+        self.store = store or default_repository()
 
     def facts_for(self, entity: Entity) -> list[Fact]:
         cik = self.client.cik_for_ticker(entity.ticker)
