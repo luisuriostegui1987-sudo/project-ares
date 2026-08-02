@@ -29,7 +29,12 @@ from typing import Any
 from ares.facts import InMemoryFactStore
 from ares.models import Entity, Event, Fact, KnowledgeClass
 from ares.models.base import utcnow
-from ares.models.ifact import FactValidationEvent, InstitutionalFact, are_comparable
+from ares.models.ifact import (
+    FactValidationEvent,
+    InstitutionalFact,
+    are_comparable,
+    canonical_value,
+)
 from ares.models.vocab import (
     METRIC_REGISTRY,
     AssertionType,
@@ -402,32 +407,47 @@ def _to_pipeline_facts(entity: Entity, ifacts: list[InstitutionalFact]) -> list[
         key=lambda f: f.effective_end or f.retrieved_at,
         reverse=True,
     )
-    named: list[tuple[str, InstitutionalFact]] = []
-    if len(revenue) >= 1:
-        named.append((METRIC_REVENUE_FY_CURRENT, revenue[0]))
-    # Fail closed (CRO): the YoY pair is only formed when the canonical
-    # comparability predicate passes — otherwise the prior name is never
-    # emitted and no growth signal can exist downstream.
-    if len(revenue) >= 2 and are_comparable(revenue[0], revenue[1]):
-        named.append((METRIC_REVENUE_FY_PRIOR, revenue[1]))
-    elif len(revenue) >= 2:
-        logger.warning(
-            "edgar: revenue pair for %s failed the comparability predicate; no YoY pair emitted",
-            entity.entity_id,
-        )
+    named: list[tuple[str, InstitutionalFact, float | int | str]] = []
+    if revenue:
+        current = revenue[0]
+        current_value: float | int | str = current.value
+        # Fail closed (CRO): the YoY pair is only formed when the canonical
+        # comparability predicate passes — otherwise the prior name is never
+        # emitted and no growth signal can exist downstream.
+        if len(revenue) >= 2:
+            prior = revenue[1]
+            if are_comparable(current, prior):
+                # Equal scales: raw values already share the canonical scale.
+                named.append((METRIC_REVENUE_FY_PRIOR, prior, prior.value))
+            elif are_comparable(current, prior, canonical_scale=0):
+                # Explicit normalization to canonical scale 0: BOTH values go
+                # through canonical_value(); growth math downstream never
+                # mixes unnormalized raw values.
+                current_canonical = canonical_value(current)
+                prior_canonical = canonical_value(prior)
+                if current_canonical is not None and prior_canonical is not None:
+                    current_value = current_canonical
+                    named.append((METRIC_REVENUE_FY_PRIOR, prior, prior_canonical))
+            else:
+                logger.warning(
+                    "edgar: revenue pair for %s failed the comparability predicate; "
+                    "no YoY pair emitted",
+                    entity.entity_id,
+                )
+        named.insert(0, (METRIC_REVENUE_FY_CURRENT, current, current_value))
     seen_metrics: set[str] = set()
     for f in ifacts:
         if f.metric_ref == "financial.revenue" or f.metric_ref in seen_metrics:
             continue
         seen_metrics.add(f.metric_ref)
-        named.append((f.metric_ref, f))
-    for metric_name, ifact in named:
+        named.append((f.metric_ref, f, f.value))
+    for metric_name, ifact, value in named:
         out.append(
             Fact(
                 fact_id=ifact.fact_id,  # same record id: report cites the store
                 entity_id=entity.entity_id,
                 metric_name=metric_name,
-                value=ifact.value,
+                value=value,
                 unit=ifact.currency or ifact.unit,
                 source_name="SEC EDGAR",
                 source_id_or_url=ifact.source_locator,

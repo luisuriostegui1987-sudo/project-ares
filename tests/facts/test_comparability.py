@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
 from _helpers import kwargs
 
 from ares.models import InstitutionalFact, KnowledgeClass
@@ -113,6 +114,32 @@ def test_later_restatement_is_not_used_at_earlier_decision_time():
     prior = _fy(FY2025)
     assert are_comparable(restated, prior, decision_time=T2) is False  # not usable at T2
     assert are_comparable(original, prior, decision_time=T2) is True  # historical view intact
+
+
+def test_separately_instantiated_basis_values_are_comparable():
+    """Value equality, not object identity: independently constructed enum
+    values with the same underlying value must compare as equal."""
+    a = _fy(FY2026, basis=Basis("AS_REPORTED"))
+    b = _fy(FY2025, basis=Basis.AS_REPORTED)
+    assert a.basis == b.basis
+    assert are_comparable(a, b) is True
+
+
+def test_normalized_scales_produce_correct_yoy_end_to_end():
+    """Current in millions (scale=6), prior in thousands (scale=3): with
+    explicit normalization BOTH values go through canonical_value() and the
+    growth math never sees unnormalized raw values."""
+    current_in_millions = _fy(FY2026, value=215_938, scale=6)  # = 215.938B
+    prior_in_thousands = _fy(FY2025, value=130_497_000, scale=3)  # = 130.497B
+    assert canonical_value(current_in_millions) == 215_938_000_000.0
+    assert canonical_value(prior_in_thousands) == 130_497_000_000.0
+
+    signal = _signal_from([current_in_millions, prior_in_thousands])
+    assert signal is not None
+    assert signal.lookback_window == "FY"
+    # (215.938B - 130.497B) / 130.497B * 100 = 65.47% — the raw values
+    # (215,938 vs 130,497,000) would have produced -99.83%.
+    assert signal.measured_value == pytest.approx(65.47, abs=0.01)
 
 
 def test_unusable_fact_fails_closed():

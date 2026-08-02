@@ -338,11 +338,11 @@ def are_comparable(
         return False
     if (
         a.subject_entity_id != b.subject_entity_id
-        or a.subject_scope_type is not b.subject_scope_type
+        or a.subject_scope_type != b.subject_scope_type
         or a.subject_scope_id != b.subject_scope_id
         or a.metric_ref != b.metric_ref
-        or a.basis is not b.basis
-        or a.period_type is not b.period_type
+        or a.basis != b.basis
+        or a.period_type != b.period_type
         or a.unit != b.unit
         or a.currency != b.currency
     ):
@@ -353,8 +353,8 @@ def are_comparable(
         a.retrieved_at > decision_time or b.retrieved_at > decision_time
     ):
         return False
-    end_a = a.effective_end if a.period_type is PeriodType.DURATION else a.effective_instant
-    end_b = b.effective_end if b.period_type is PeriodType.DURATION else b.effective_instant
+    end_a = a.effective_end if a.period_type == PeriodType.DURATION else a.effective_instant
+    end_b = b.effective_end if b.period_type == PeriodType.DURATION else b.effective_instant
     if end_a is None or end_b is None:
         return False
     lo, hi = _YOY_GAP_DAYS
