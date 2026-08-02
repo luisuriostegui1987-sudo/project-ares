@@ -89,15 +89,17 @@ def test_metric_registry_types_are_respected():
     )
 
 
-def test_edgar_facts_carry_structured_consolidated_basis():
+def test_edgar_facts_carry_conditionally_classified_basis():
     facts = extract_institutional_facts("NVDA", CIK, payload(), retrieved_at=RETRIEVED)
     assert facts
-    assert all(f.basis == EDGAR_BASIS for f in facts)
-    basis = facts[0].basis
-    assert basis.accounting_standard.value == "GAAP"
-    assert basis.consolidation_scope.value == "CONSOLIDATED"
-    assert basis.adjustment_type.value == "AS_REPORTED"
-    assert basis.period_basis.value == "FISCAL"
+    gaap = [f for f in facts if f.metric_ref != "financial.shares_outstanding"]
+    assert gaap and all(f.basis == EDGAR_BASIS for f in gaap)
+    shares = next(f for f in facts if f.metric_ref == "financial.shares_outstanding")
+    # dei registrant metadata: NOT auto-labeled GAAP (approved rule => NA).
+    assert shares.basis.accounting_standard.value == "NA"
+    assert shares.basis.consolidation_scope.value == "CONSOLIDATED"
+    assert shares.basis.adjustment_type.value == "AS_REPORTED"
+    assert shares.basis.period_basis.value == "FISCAL"
 
 
 def test_extraction_is_deterministic():

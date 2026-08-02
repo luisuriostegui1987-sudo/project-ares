@@ -84,16 +84,83 @@ _UNIT_CURRENCY = {"USD": "USD", "USD/shares": "USD", "shares": None}
 # (taxonomy, xbrl tag, unit, raw companyfacts item)
 TaggedItem = tuple[str, str, str, dict[str, Any]]
 
-# Structured basis for SEC companyfacts: US-GAAP, consolidated (the API returns
-# only non-dimensional values), as reported in the filing, fiscal periods.
-# Anything a future observation cannot map to these evidenced values must fail
-# closed rather than be inferred.
+# Reference basis for the standard case: an undimensioned, original-filing,
+# fiscal-period us-gaap observation. Individual observations are classified
+# conditionally by classify_basis() — never assigned this universally.
 EDGAR_BASIS = Basis(
     accounting_standard=AccountingStandard.GAAP,
     consolidation_scope=ConsolidationScope.CONSOLIDATED,
     adjustment_type=AdjustmentType.AS_REPORTED,
     period_basis=PeriodBasis.FISCAL,
 )
+
+# Approved taxonomy -> accounting standard rules. Issuer extension taxonomies
+# (e.g. "nvda") are deliberately absent: no approved rule => fail closed.
+# "dei" is registrant metadata, not an accounting-standard assertion => NA.
+_STANDARD_BY_TAXONOMY = {
+    "us-gaap": AccountingStandard.GAAP,
+    "ifrs-full": AccountingStandard.IFRS,
+    "dei": AccountingStandard.NA,
+}
+
+# Markers of a dimensional (member/segment) XBRL context in observation JSON.
+_DIMENSIONAL_KEYS = ("segment", "segments", "dimensions", "member", "members")
+
+
+def classify_basis(taxonomy: str, item: dict[str, Any], period_type: PeriodType) -> Basis | None:
+    """Conservative, conditional Basis classification for one EDGAR observation.
+
+    Every dimension must be supported by the observation's own evidence;
+    anything ambiguous returns None and the observation is REJECTED (never
+    emitted mislabeled). Rules:
+
+    - accounting_standard: approved taxonomy rules only; issuer extension
+      concepts have no approved mapping and fail closed.
+    - consolidation_scope: CONSOLIDATED only for an undimensioned context.
+      Dimensional (member/segment) contexts are not ingested in Sprint 2 —
+      the COMPANY-scoped subject model cannot represent them safely, so they
+      are rejected rather than mislabeled consolidated.
+    - adjustment_type: AS_REPORTED only for an original filing (form without
+      the /A amendment suffix). Amended filings are RESTATED observations;
+      wiring them into the supersession lifecycle needs the original record
+      and is Sprint-3 work, so they are never labeled AS_REPORTED.
+    - period_basis: FISCAL only when fiscal metadata (fy+fp) and period dates
+      are present; an explicit TTM marker classifies as TTM. Never inferred
+      from the provider name or the filing form alone.
+    """
+    standard = _STANDARD_BY_TAXONOMY.get(taxonomy)
+    if standard is None:
+        logger.info("edgar: basis rejected — no approved standard rule for taxonomy %r", taxonomy)
+        return None
+
+    if any(item.get(k) for k in _DIMENSIONAL_KEYS):
+        logger.info(
+            "edgar: basis rejected — dimensional context (segment scope not ingested in Sprint 2)"
+        )
+        return None
+    scope = ConsolidationScope.CONSOLIDATED  # undimensioned context only
+
+    form = str(item.get("form") or "")
+    if not form:
+        logger.info("edgar: basis rejected — amendment status undeterminable (missing form)")
+        return None
+    adjustment = AdjustmentType.RESTATED if form.endswith("/A") else AdjustmentType.AS_REPORTED
+
+    fp = item.get("fp")
+    if fp == "TTM":
+        period_basis = PeriodBasis.TTM
+    elif fp and item.get("fy") and item.get("end"):
+        period_basis = PeriodBasis.FISCAL
+    else:
+        logger.info("edgar: basis rejected — fiscal metadata incomplete (fy/fp/end)")
+        return None
+
+    return Basis(
+        accounting_standard=standard,
+        consolidation_scope=scope,
+        adjustment_type=adjustment,
+        period_basis=period_basis,
+    )
 
 
 class EdgarError(RuntimeError):
@@ -309,6 +376,9 @@ def _to_institutional_fact(
     end = _parse_date(item.get("end"))
     if published is None or end is None:
         return None
+    basis = classify_basis(taxonomy, item, period_type)
+    if basis is None:
+        return None  # unsafe classification: observation rejected, never mislabeled
     knowledge = (
         KnowledgeClass.VERIFIED_FACT
         if _provenance_complete(item)
@@ -319,7 +389,7 @@ def _to_institutional_fact(
         "subject_scope_type": "COMPANY",
         "subject_scope_id": f"CIK{cik:010d}",
         "metric_ref": metric_ref,
-        "basis": EDGAR_BASIS,
+        "basis": basis,
         "assertion_type": AssertionType.REPORTED,
         "value": value,
         "value_type": value_type,
