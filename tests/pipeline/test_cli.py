@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from ares.cli import main
+from ares.pipeline import MOCK_DATA_WARNING
 
 
 def test_analyze_text_output(capsys):
@@ -14,11 +15,19 @@ def test_analyze_text_output(capsys):
     assert "revenue_growth_yoy_pct" in out
 
 
+def test_analyze_text_output_warns_about_mock_data(capsys):
+    assert main(["analyze", "NVDA"]) == 0
+    out = capsys.readouterr().out
+    assert MOCK_DATA_WARNING in out
+    assert "data_mode: MOCK" in out
+
+
 def test_analyze_json_output(capsys):
     assert main(["analyze", "NVDA", "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["entity"]["ticker"] == "NVDA"
     assert payload["pipeline_version"] == "SLICE-1.0"
+    assert payload["data_mode"] == "MOCK"
     assert payload["signals"][0]["signal_type"] == "revenue_growth_yoy_pct"
 
 

@@ -11,12 +11,14 @@ from .events import EventsProvider, MockEventsProvider, gather_events
 from .evidence import derive_evidence
 from .facts import FactsProvider, MockFactsProvider, gather_facts
 from .orchestrator import ResearchPipeline
-from .output import PIPELINE_VERSION, ResearchReport, render_text
+from .output import MOCK_DATA_WARNING, PIPELINE_VERSION, DataMode, ResearchReport, render_text
 from .signals import derive_signals
 
 __all__ = [
+    "MOCK_DATA_WARNING",
     "PIPELINE_VERSION",
     "ContextProvider",
+    "DataMode",
     "Entity",
     "EntityContext",
     "EntityProvider",

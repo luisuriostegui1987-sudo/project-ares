@@ -17,6 +17,22 @@ def test_full_run_produces_valid_report():
     assert report.pipeline_version == "SLICE-1.0"
 
 
+def test_report_is_marked_as_mock_data():
+    from ares.pipeline import DataMode
+
+    report = ResearchPipeline().run("NVDA")
+    assert report.data_mode is DataMode.MOCK
+    assert '"data_mode":"MOCK"' in report.model_dump_json().replace(" ", "")
+
+
+def test_entity_has_one_canonical_definition():
+    from ares.models import Entity as ModelsEntity
+    from ares.models.entity import Entity as CanonicalEntity
+    from ares.pipeline.entity import Entity as PipelineEntity
+
+    assert ModelsEntity is CanonicalEntity is PipelineEntity
+
+
 def test_report_serialization_roundtrip():
     report = ResearchPipeline().run("NVDA")
     restored = ResearchReport.model_validate_json(report.model_dump_json())

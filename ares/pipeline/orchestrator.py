@@ -15,7 +15,7 @@ from .entity import EntityProvider, MockEntityProvider, resolve_entity
 from .events import EventsProvider, MockEventsProvider, gather_events
 from .evidence import derive_evidence
 from .facts import FactsProvider, MockFactsProvider, gather_facts
-from .output import ResearchReport
+from .output import DataMode, ResearchReport
 from .signals import derive_signals
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,8 @@ class ResearchPipeline:
             facts=facts,
             evidence=evidence,
             signals=signals,
+            # Sprint 1 ships mock providers only; flip when real providers exist.
+            data_mode=DataMode.MOCK,
         )
         logger.info("pipeline: run complete for %s (report %s)", entity.entity_id, report.report_id)
         return report

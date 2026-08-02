@@ -10,6 +10,7 @@ must cite fact_ids that are actually present in the report.
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -21,6 +22,14 @@ from .entity import Entity
 
 PIPELINE_VERSION = "SLICE-1.0"
 
+MOCK_DATA_WARNING = "WARNING: This report uses mock data and is not investment research."
+
+
+class DataMode(str, Enum):
+    """Provenance of the data behind a report. Sprint 1 ships MOCK only."""
+
+    MOCK = "MOCK"
+
 
 class ResearchReport(BaseModel):
     """Structured output of one research pipeline run (no Risk/Decision in Sprint 1)."""
@@ -31,6 +40,7 @@ class ResearchReport(BaseModel):
     facts: list[Fact] = Field(default_factory=list)
     evidence: Evidence
     signals: list[Signal] = Field(default_factory=list)
+    data_mode: DataMode = DataMode.MOCK
     pipeline_version: str = PIPELINE_VERSION
     generated_at: datetime = Field(default_factory=utcnow)
     report_id: str = Field(default_factory=lambda: new_id("report"))
@@ -65,7 +75,9 @@ def render_text(report: ResearchReport) -> str:
     """Human-readable summary for the CLI. JSON stays the canonical format."""
     e = report.entity
     lines = [
+        *([MOCK_DATA_WARNING] if report.data_mode is DataMode.MOCK else []),
         f"ARES research report — {e.name} ({e.ticker})",
+        f"  data_mode: {report.data_mode.value}",
         f"  report_id: {report.report_id}   pipeline: {report.pipeline_version}",
         f"  sector: {e.sector or '-'} / {e.industry or '-'}",
         f"  context: {report.context.business_summary}",
