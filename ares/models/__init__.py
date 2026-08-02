@@ -17,7 +17,13 @@ from .enums import (
 from .event import Event
 from .evidence import Claim, Evidence
 from .fact import Fact
-from .ifact import FactFreshnessEvent, FactValidationEvent, InstitutionalFact
+from .ifact import (
+    FactFreshnessEvent,
+    FactValidationEvent,
+    InstitutionalFact,
+    are_comparable,
+    canonical_value,
+)
 from .risk import RiskResult
 from .signal import Signal
 from .thesis import Scores, Thesis
@@ -45,6 +51,8 @@ __all__ = [
     "Thesis",
     "ThesisStatus",
     "TimeHorizon",
+    "are_comparable",
+    "canonical_value",
     "new_id",
     "utcnow",
 ]

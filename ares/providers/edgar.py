@@ -29,7 +29,7 @@ from typing import Any
 from ares.facts import InMemoryFactStore
 from ares.models import Entity, Event, Fact, KnowledgeClass
 from ares.models.base import utcnow
-from ares.models.ifact import FactValidationEvent, InstitutionalFact
+from ares.models.ifact import FactValidationEvent, InstitutionalFact, are_comparable
 from ares.models.vocab import (
     METRIC_REGISTRY,
     AssertionType,
@@ -405,8 +405,16 @@ def _to_pipeline_facts(entity: Entity, ifacts: list[InstitutionalFact]) -> list[
     named: list[tuple[str, InstitutionalFact]] = []
     if len(revenue) >= 1:
         named.append((METRIC_REVENUE_FY_CURRENT, revenue[0]))
-    if len(revenue) >= 2:
+    # Fail closed (CRO): the YoY pair is only formed when the canonical
+    # comparability predicate passes — otherwise the prior name is never
+    # emitted and no growth signal can exist downstream.
+    if len(revenue) >= 2 and are_comparable(revenue[0], revenue[1]):
         named.append((METRIC_REVENUE_FY_PRIOR, revenue[1]))
+    elif len(revenue) >= 2:
+        logger.warning(
+            "edgar: revenue pair for %s failed the comparability predicate; no YoY pair emitted",
+            entity.entity_id,
+        )
     seen_metrics: set[str] = set()
     for f in ifacts:
         if f.metric_ref == "financial.revenue" or f.metric_ref in seen_metrics:

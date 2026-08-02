@@ -302,6 +302,65 @@ class InstitutionalFact(BaseModel):
         )
 
 
+def canonical_value(fact: InstitutionalFact) -> float | None:
+    """The value explicitly normalized to canonical scale 0, when numeric."""
+    if not isinstance(fact.value, (int, float)):
+        return None
+    return float(fact.value) * (10**fact.scale)
+
+
+# Consecutive comparable annual periods: period ends must be ~1 year apart.
+_YOY_GAP_DAYS = (300, 430)
+
+
+def are_comparable(
+    fact_current: InstitutionalFact,
+    fact_prior: InstitutionalFact,
+    decision_time: datetime | None = None,
+    *,
+    canonical_scale: int | None = None,
+) -> bool:
+    """Canonical annual-comparability predicate (CRO conditions, PR #2 review).
+
+    FAILS CLOSED: returns True only when ALL applicable conditions pass —
+    same subject/scope/metric/basis/period_type/unit/currency; same scale
+    (or the caller declares explicit normalization via ``canonical_scale``
+    and compares through :func:`canonical_value`); period ends of consecutive
+    annual periods (300-430 days apart); both facts usable for calculation;
+    and, when ``decision_time`` is supplied, neither fact retrieved after it
+    (a later restatement is therefore never mixed into an earlier historical
+    view). Selecting the point-in-time CURRENT fact from each source stream
+    is the caller's duty (see InMemoryFactStore.current_facts_as_of) — two
+    facts alone cannot prove they are the current ones.
+    """
+    a, b = fact_current, fact_prior
+    if not (a.usable_for_calculation and b.usable_for_calculation):
+        return False
+    if (
+        a.subject_entity_id != b.subject_entity_id
+        or a.subject_scope_type is not b.subject_scope_type
+        or a.subject_scope_id != b.subject_scope_id
+        or a.metric_ref != b.metric_ref
+        or a.basis is not b.basis
+        or a.period_type is not b.period_type
+        or a.unit != b.unit
+        or a.currency != b.currency
+    ):
+        return False
+    if a.scale != b.scale and canonical_scale is None:
+        return False
+    if decision_time is not None and (
+        a.retrieved_at > decision_time or b.retrieved_at > decision_time
+    ):
+        return False
+    end_a = a.effective_end if a.period_type is PeriodType.DURATION else a.effective_instant
+    end_b = b.effective_end if b.period_type is PeriodType.DURATION else b.effective_instant
+    if end_a is None or end_b is None:
+        return False
+    lo, hi = _YOY_GAP_DAYS
+    return lo <= (end_a - end_b).days <= hi
+
+
 class FactValidationEvent(BaseModel):
     """Append-only validation status event. Current status = latest event."""
 
