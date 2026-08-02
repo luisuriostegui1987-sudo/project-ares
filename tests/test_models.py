@@ -6,13 +6,10 @@ Run: pytest -q   (requires pydantic>=2.7, pytest>=8)
 
 from __future__ import annotations
 
-import sys
 from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
-
-sys.path.insert(0, __file__.rsplit("/tests/", 1)[0])
 
 from ares.models import (
     Claim,

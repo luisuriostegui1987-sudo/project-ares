@@ -39,35 +39,42 @@ class ContextProvider(Protocol):
 class MockContextProvider:
     """Static context for the Sprint-1 slice."""
 
-    _SUMMARIES: ClassVar[dict[str, dict[str, object]]] = {
-        "NVDA": {
-            "business_summary": (
+    # (business_summary, key_products, competitors)
+    _SUMMARIES: ClassVar[dict[str, tuple[str, list[str], list[str]]]] = {
+        "NVDA": (
+            (
                 "Designs GPUs and full-stack accelerated-computing platforms; "
                 "dominant supplier of AI datacenter compute."
             ),
-            "key_products": ["Data Center GPUs", "CUDA platform", "Networking (Mellanox)"],
-            "competitors": ["AMD", "Intel", "Custom silicon (TPU/Trainium)"],
-        },
-        "CRWV": {
-            "business_summary": (
+            ["Data Center GPUs", "CUDA platform", "Networking (Mellanox)"],
+            ["AMD", "Intel", "Custom silicon (TPU/Trainium)"],
+        ),
+        "CRWV": (
+            (
                 "AI-focused cloud provider renting GPU capacity at scale; "
                 "customer-concentrated, capex-heavy growth model."
             ),
-            "key_products": ["GPU cloud instances", "Managed AI clusters"],
-            "competitors": ["AWS", "Azure", "Lambda", "Nebius"],
-        },
-        "AAPL": {
-            "business_summary": "Consumer hardware, services and ecosystem company.",
-            "key_products": ["iPhone", "Services", "Mac"],
-            "competitors": ["Samsung", "Google"],
-        },
+            ["GPU cloud instances", "Managed AI clusters"],
+            ["AWS", "Azure", "Lambda", "Nebius"],
+        ),
+        "AAPL": (
+            "Consumer hardware, services and ecosystem company.",
+            ["iPhone", "Services", "Mac"],
+            ["Samsung", "Google"],
+        ),
     }
 
     def context_for(self, entity: Entity) -> EntityContext:
         row = self._SUMMARIES.get(entity.entity_id)
         if row is None:
             raise LookupError(f"No context available for {entity.entity_id!r}.")
-        return EntityContext(entity_id=entity.entity_id, **row)  # type: ignore[arg-type]
+        summary, products, competitors = row
+        return EntityContext(
+            entity_id=entity.entity_id,
+            business_summary=summary,
+            key_products=products,
+            competitors=competitors,
+        )
 
 
 def build_context(entity: Entity, provider: ContextProvider) -> EntityContext:
