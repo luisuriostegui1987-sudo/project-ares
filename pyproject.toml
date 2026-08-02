@@ -1,3 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ares-core"
+version = "0.1.0"
+description = "Project ARES — AI-native investment research (core)"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.7"]
+
+[project.scripts]
+ares = "ares.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ares"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"

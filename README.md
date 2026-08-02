@@ -1,5 +1,18 @@
 # ares-core
 
+## Sprint 1 — the vertical slice
+
+```bash
+ares analyze NVDA            # or: python -m ares analyze NVDA
+ares analyze NVDA --json     # canonical JSON report
+```
+
+Runs the approved Research Pipeline end to end:
+Entity → Context → Events → Facts → Evidence → Signals → Structured Research
+Output (`ResearchReport`). No Risk, no Decision, no Portfolio yet — data
+providers are Sprint-1 mocks (`mock://` sources) behind swappable Protocols
+in `ares/pipeline/`.
+
 Core domain models for **Project ARES** — the AI-native investment *research*
 platform. This is the first code commit: the objects the whole pipeline moves
 around, implemented faithfully from **ARES-015** (Canonical Glossary & Data
