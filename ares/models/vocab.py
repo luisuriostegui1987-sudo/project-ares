@@ -11,12 +11,55 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
-class Basis(str, Enum):
-    """Accounting basis of the asserted value."""
+class AccountingStandard(str, Enum):
+    GAAP = "GAAP"
+    IFRS = "IFRS"
+    NON_GAAP = "NON_GAAP"
+    STATUTORY = "STATUTORY"
+    NA = "NA"
 
+
+class ConsolidationScope(str, Enum):
+    CONSOLIDATED = "CONSOLIDATED"
+    PARENT_ONLY = "PARENT_ONLY"
+    PRO_FORMA = "PRO_FORMA"
+    SEGMENT = "SEGMENT"
+    NA = "NA"
+
+
+class AdjustmentType(str, Enum):
     AS_REPORTED = "AS_REPORTED"
     ADJUSTED = "ADJUSTED"
-    PRO_FORMA = "PRO_FORMA"
+    NORMALIZED = "NORMALIZED"
+    RESTATED = "RESTATED"
+
+
+class PeriodBasis(str, Enum):
+    FISCAL = "FISCAL"
+    CALENDAR = "CALENDAR"
+    TTM = "TTM"
+
+
+class Basis(BaseModel):
+    """Structured accounting basis (ARES-FACT-001 v1.0). Immutable value object.
+
+    Compares by value across all four dimensions; participates in fact_key
+    and content_hash through its canonical token / canonical JSON form.
+    """
+
+    model_config = {"frozen": True}
+
+    accounting_standard: AccountingStandard
+    consolidation_scope: ConsolidationScope
+    adjustment_type: AdjustmentType
+    period_basis: PeriodBasis
+
+    def canonical_token(self) -> str:
+        """Deterministic single-token form for identity derivation."""
+        return (
+            f"{self.accounting_standard.value}/{self.consolidation_scope.value}/"
+            f"{self.adjustment_type.value}/{self.period_basis.value}"
+        )
 
 
 class SubjectScopeType(str, Enum):

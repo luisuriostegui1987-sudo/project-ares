@@ -37,8 +37,12 @@ from ares.models.ifact import (
 )
 from ares.models.vocab import (
     METRIC_REGISTRY,
+    AccountingStandard,
+    AdjustmentType,
     AssertionType,
     Basis,
+    ConsolidationScope,
+    PeriodBasis,
     PeriodType,
     ProvenanceType,
     RetrievalMethod,
@@ -79,6 +83,17 @@ _UNIT_CURRENCY = {"USD": "USD", "USD/shares": "USD", "shares": None}
 
 # (taxonomy, xbrl tag, unit, raw companyfacts item)
 TaggedItem = tuple[str, str, str, dict[str, Any]]
+
+# Structured basis for SEC companyfacts: US-GAAP, consolidated (the API returns
+# only non-dimensional values), as reported in the filing, fiscal periods.
+# Anything a future observation cannot map to these evidenced values must fail
+# closed rather than be inferred.
+EDGAR_BASIS = Basis(
+    accounting_standard=AccountingStandard.GAAP,
+    consolidation_scope=ConsolidationScope.CONSOLIDATED,
+    adjustment_type=AdjustmentType.AS_REPORTED,
+    period_basis=PeriodBasis.FISCAL,
+)
 
 
 class EdgarError(RuntimeError):
@@ -304,7 +319,7 @@ def _to_institutional_fact(
         "subject_scope_type": "COMPANY",
         "subject_scope_id": f"CIK{cik:010d}",
         "metric_ref": metric_ref,
-        "basis": Basis.AS_REPORTED,
+        "basis": EDGAR_BASIS,
         "assertion_type": AssertionType.REPORTED,
         "value": value,
         "value_type": value_type,

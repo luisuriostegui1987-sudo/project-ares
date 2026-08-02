@@ -10,13 +10,17 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from _helpers import kwargs
+from _helpers import kwargs, make_basis
 
 from ares.models import InstitutionalFact, KnowledgeClass
 from ares.models.ifact import are_comparable, canonical_value
 from ares.models.vocab import (
+    AccountingStandard,
+    AdjustmentType,
     AssertionType,
     Basis,
+    ConsolidationScope,
+    PeriodBasis,
     RevisionType,
     SubjectScopeType,
 )
@@ -73,7 +77,25 @@ def test_different_subject_scope_id_fails():
 
 
 def test_different_basis_fails():
-    assert are_comparable(_fy(FY2026), _fy(FY2025, basis=Basis.ADJUSTED)) is False
+    adjusted = make_basis(adjustment_type=AdjustmentType.ADJUSTED)
+    assert are_comparable(_fy(FY2026), _fy(FY2025, basis=adjusted)) is False
+
+
+@pytest.mark.parametrize(
+    "field_override",
+    [
+        {"accounting_standard": AccountingStandard.IFRS},
+        {"consolidation_scope": ConsolidationScope.PARENT_ONLY},
+        {"adjustment_type": AdjustmentType.NORMALIZED},
+        {"period_basis": PeriodBasis.CALENDAR},
+    ],
+    ids=["accounting_standard", "consolidation_scope", "adjustment_type", "period_basis"],
+)
+def test_each_basis_field_mismatch_produces_no_signal(field_override):
+    """Changing any single Basis dimension breaks comparability end-to-end."""
+    prior = _fy(FY2025, basis=make_basis(**field_override))
+    assert are_comparable(_fy(FY2026), prior) is False
+    assert _signal_from([_fy(FY2026, value=215_938_000_000), prior]) is None
 
 
 def test_different_unit_fails():
@@ -117,10 +139,19 @@ def test_later_restatement_is_not_used_at_earlier_decision_time():
 
 
 def test_separately_instantiated_basis_values_are_comparable():
-    """Value equality, not object identity: independently constructed enum
-    values with the same underlying value must compare as equal."""
-    a = _fy(FY2026, basis=Basis("AS_REPORTED"))
-    b = _fy(FY2025, basis=Basis.AS_REPORTED)
+    """Value equality, not object identity: independently constructed Basis
+    objects with identical four-field values must compare as equal."""
+    a = _fy(FY2026, basis=make_basis())
+    b = _fy(
+        FY2025,
+        basis=Basis(
+            accounting_standard="GAAP",
+            consolidation_scope="CONSOLIDATED",
+            adjustment_type="AS_REPORTED",
+            period_basis="FISCAL",
+        ),
+    )
+    assert a.basis is not b.basis
     assert a.basis == b.basis
     assert are_comparable(a, b) is True
 
@@ -150,7 +181,12 @@ def test_scale_normalization_is_strictly_scale_only():
     for bad_prior in (
         _fy(FY2025, value=130_497_000, scale=3, currency="EUR"),
         _fy(FY2025, value=130_497_000, scale=3, unit="EUR", currency="USD"),
-        _fy(FY2025, value=130_497_000, scale=3, basis=Basis.ADJUSTED),
+        _fy(
+            FY2025,
+            value=130_497_000,
+            scale=3,
+            basis=make_basis(adjustment_type=AdjustmentType.ADJUSTED),
+        ),
         _fy(FY2025, value=130_497_000, scale=3, subject_entity_id="AMD"),
         _fy(
             FY2025,
@@ -194,7 +230,10 @@ def test_comparable_pair_produces_signal_end_to_end():
 
 def test_non_comparable_pair_produces_no_signal_end_to_end():
     # Same numbers, but the prior year is on an ADJUSTED basis: no pair, no signal.
-    ifacts = [_fy(FY2026, value=215_938_000_000), _fy(FY2025, basis=Basis.ADJUSTED)]
+    ifacts = [
+        _fy(FY2026, value=215_938_000_000),
+        _fy(FY2025, basis=make_basis(adjustment_type=AdjustmentType.ADJUSTED)),
+    ]
     pipeline_facts = _to_pipeline_facts(
         Entity(entity_id="NVDA", ticker="NVDA", name="NVIDIA CORP"), ifacts
     )

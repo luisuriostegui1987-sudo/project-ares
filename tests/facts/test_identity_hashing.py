@@ -4,11 +4,18 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from _helpers import kwargs
+import pytest
+from _helpers import kwargs, make_basis
 
 from ares.models import InstitutionalFact
 from ares.models.ifact import compute_content_hash
-from ares.models.vocab import RevisionType
+from ares.models.vocab import (
+    AccountingStandard,
+    AdjustmentType,
+    ConsolidationScope,
+    PeriodBasis,
+    RevisionType,
+)
 
 
 def test_content_hash_is_reproducible():
@@ -79,6 +86,35 @@ def test_fact_key_changes_with_period_and_metric():
     )
     c = InstitutionalFact(**kwargs(metric_ref="financial.net_income"))
     assert len({a.fact_key, b.fact_key, c.fact_key}) == 3
+
+
+@pytest.mark.parametrize(
+    "field_override",
+    [
+        {"accounting_standard": AccountingStandard.IFRS},
+        {"consolidation_scope": ConsolidationScope.SEGMENT},
+        {"adjustment_type": AdjustmentType.RESTATED},
+        {"period_basis": PeriodBasis.TTM},
+    ],
+    ids=["accounting_standard", "consolidation_scope", "adjustment_type", "period_basis"],
+)
+def test_changing_any_basis_field_changes_fact_key(field_override):
+    baseline = InstitutionalFact(**kwargs())
+    changed = InstitutionalFact(**kwargs(basis=make_basis(**field_override)))
+    assert changed.fact_key != baseline.fact_key
+    assert changed.content_hash != baseline.content_hash
+
+
+def test_basis_field_ordering_does_not_change_hash():
+    data_a = kwargs()
+    data_b = kwargs()
+    data_b["basis"] = dict(reversed(list(dict(data_a["basis"]).items())))
+    assert compute_content_hash(data_a) == compute_content_hash(data_b)
+
+
+def test_all_four_basis_dimensions_appear_in_fact_key():
+    key = InstitutionalFact(**kwargs()).fact_key
+    assert "gaap/consolidated/as_reported/fiscal" in key
 
 
 def test_fact_key_excludes_source_value_revision_retrieval():

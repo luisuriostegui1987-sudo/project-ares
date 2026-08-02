@@ -7,8 +7,12 @@ from typing import Any
 
 from ares.models import KnowledgeClass
 from ares.models.vocab import (
+    AccountingStandard,
+    AdjustmentType,
     AssertionType,
     Basis,
+    ConsolidationScope,
+    PeriodBasis,
     PeriodType,
     ProvenanceType,
     RetrievalMethod,
@@ -17,13 +21,24 @@ from ares.models.vocab import (
 )
 
 
+def make_basis(**overrides: Any) -> Basis:
+    base: dict[str, Any] = {
+        "accounting_standard": AccountingStandard.GAAP,
+        "consolidation_scope": ConsolidationScope.CONSOLIDATED,
+        "adjustment_type": AdjustmentType.AS_REPORTED,
+        "period_basis": PeriodBasis.FISCAL,
+    }
+    base.update(overrides)
+    return Basis(**base)
+
+
 def kwargs(**overrides: Any) -> dict[str, Any]:
     base: dict[str, Any] = {
         "subject_entity_id": "NVDA",
         "subject_scope_type": SubjectScopeType.COMPANY,
         "subject_scope_id": "CIK0001045810",
         "metric_ref": "financial.revenue",
-        "basis": Basis.AS_REPORTED,
+        "basis": make_basis(),
         "assertion_type": AssertionType.REPORTED,
         "value": 130_497_000_000,
         "value_type": ValueType.MONEY,

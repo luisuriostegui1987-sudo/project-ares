@@ -20,6 +20,7 @@ from ares.pipeline.facts import (
     MockFactsProvider,
 )
 from ares.providers.edgar import (
+    EDGAR_BASIS,
     EdgarFactsProvider,
     LiveContextProvider,
     NoEventsProvider,
@@ -86,6 +87,17 @@ def test_metric_registry_types_are_respected():
     assert facts["financial.cash_and_equivalents"].effective_instant == datetime(
         2025, 1, 26, tzinfo=UTC
     )
+
+
+def test_edgar_facts_carry_structured_consolidated_basis():
+    facts = extract_institutional_facts("NVDA", CIK, payload(), retrieved_at=RETRIEVED)
+    assert facts
+    assert all(f.basis == EDGAR_BASIS for f in facts)
+    basis = facts[0].basis
+    assert basis.accounting_standard.value == "GAAP"
+    assert basis.consolidation_scope.value == "CONSOLIDATED"
+    assert basis.adjustment_type.value == "AS_REPORTED"
+    assert basis.period_basis.value == "FISCAL"
 
 
 def test_extraction_is_deterministic():

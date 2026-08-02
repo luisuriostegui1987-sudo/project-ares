@@ -58,14 +58,17 @@ def compute_fact_key(
     effective_start: datetime | None,
     effective_end: datetime | None,
 ) -> str:
-    """Deterministic logical identity. No source, value, revision or retrieval data."""
+    """Deterministic logical identity. No source, value, revision or retrieval data.
+
+    All four structured Basis dimensions participate via its canonical token.
+    """
     if period_type is PeriodType.INSTANT:
         period = _iso(effective_instant) or ""
     else:
         period = f"{_iso(effective_start) or ''}..{_iso(effective_end) or ''}"
     return (
         f"{subject_scope_type.value}:{subject_scope_id}"
-        f"|{metric_ref}|{basis.value}|{period_type.value}:{period}"
+        f"|{metric_ref}|{basis.canonical_token()}|{period_type.value}:{period}"
     ).lower()
 
 
@@ -114,6 +117,10 @@ def compute_content_hash(data: dict[str, Any]) -> str:
             v = _iso(v)
         elif isinstance(v, Enum):
             v = v.value
+        elif isinstance(v, BaseModel):  # structured Basis: canonical JSON form
+            v = v.model_dump(mode="json")
+        elif isinstance(v, dict):  # structured Basis supplied as a plain dict
+            v = {k: (x.value if isinstance(x, Enum) else x) for k, x in v.items()}
         elif isinstance(v, list):
             v = sorted(str(i) for i in v)
         payload[name] = v
@@ -194,11 +201,13 @@ class InstitutionalFact(BaseModel):
     @classmethod
     def _fill_identity_inner(cls, data: dict[str, Any]) -> dict[str, Any]:
         if not data.get("fact_key"):
+            raw_basis = data["basis"]
+            basis = raw_basis if isinstance(raw_basis, Basis) else Basis.model_validate(raw_basis)
             data["fact_key"] = compute_fact_key(
                 SubjectScopeType(data["subject_scope_type"]),
                 data["subject_scope_id"],
                 data["metric_ref"],
-                Basis(data["basis"]),
+                basis,
                 PeriodType(data["period_type"]),
                 data.get("effective_instant"),
                 data.get("effective_start"),
