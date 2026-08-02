@@ -142,6 +142,36 @@ def test_normalized_scales_produce_correct_yoy_end_to_end():
     assert signal.measured_value == pytest.approx(65.47, abs=0.01)
 
 
+def test_scale_normalization_is_strictly_scale_only():
+    """Enabling canonical_scale must never reconcile unit, currency, basis,
+    entity or scope — those dimensions still require exact equality."""
+    current = _fy(FY2026, value=215_938, scale=6)
+    assert are_comparable(current, _fy(FY2025, value=130_497_000, scale=3), canonical_scale=0)
+    for bad_prior in (
+        _fy(FY2025, value=130_497_000, scale=3, currency="EUR"),
+        _fy(FY2025, value=130_497_000, scale=3, unit="EUR", currency="USD"),
+        _fy(FY2025, value=130_497_000, scale=3, basis=Basis.ADJUSTED),
+        _fy(FY2025, value=130_497_000, scale=3, subject_entity_id="AMD"),
+        _fy(
+            FY2025,
+            value=130_497_000,
+            scale=3,
+            subject_scope_type=SubjectScopeType.SEGMENT,
+            subject_scope_id="CIK0001045810/datacenter",
+        ),
+    ):
+        assert are_comparable(current, bad_prior, canonical_scale=0) is False
+
+
+def test_consolidated_vs_segment_produces_no_signal_end_to_end():
+    segment_prior = _fy(
+        FY2025,
+        subject_scope_type=SubjectScopeType.SEGMENT,
+        subject_scope_id="CIK0001045810/datacenter",
+    )
+    assert _signal_from([_fy(FY2026, value=215_938_000_000), segment_prior]) is None
+
+
 def test_unusable_fact_fails_closed():
     forecast = _fy(
         FY2025,

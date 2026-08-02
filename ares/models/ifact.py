@@ -325,7 +325,10 @@ def are_comparable(
     FAILS CLOSED: returns True only when ALL applicable conditions pass —
     same subject/scope/metric/basis/period_type/unit/currency; same scale
     (or the caller declares explicit normalization via ``canonical_scale``
-    and compares through :func:`canonical_value`); period ends of consecutive
+    and compares through :func:`canonical_value` — normalization is STRICTLY
+    scale-only and never reconciles unit, currency, basis, subject entity or
+    subject scope, which always require exact value equality); period ends
+    of consecutive
     annual periods (300-430 days apart); both facts usable for calculation;
     and, when ``decision_time`` is supplied, neither fact retrieved after it
     (a later restatement is therefore never mixed into an earlier historical
