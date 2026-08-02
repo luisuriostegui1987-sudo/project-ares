@@ -1,5 +1,6 @@
 """Evidence & Claim (Pydantic v2). Facts marshaled to support/refute a claim
 (ARES-004 Sec 6 / ARES-015)."""
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field, model_validator
@@ -31,10 +32,14 @@ class Claim(BaseModel):
 
     @model_validator(mode="after")
     def _support(self) -> Claim:
-        if self.knowledge_class in (
-            KnowledgeClass.VERIFIED_FACT,
-            KnowledgeClass.HIGH_CONFIDENCE,
-        ) and not self.supporting_fact_ids:
+        if (
+            self.knowledge_class
+            in (
+                KnowledgeClass.VERIFIED_FACT,
+                KnowledgeClass.HIGH_CONFIDENCE,
+            )
+            and not self.supporting_fact_ids
+        ):
             raise ValueError(
                 "A Verified Fact / High Confidence claim needs >=1 "
                 "supporting_fact_id (ARES-004 Sec 6)."

@@ -4,6 +4,7 @@ Governance in code: hypothesis is mandatory (ADR-032); bear case and
 invalidation are required with minimum content. Confidence lives ONLY in
 Scores; recommended size lives in RiskResult (not here).
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
@@ -34,7 +35,9 @@ class Thesis(BaseModel):
         description="One testable central claim (formerly the Hypothesis entity, ADR-032).",
     )
     bear_case: str = Field(min_length=10, description="Mandatory steel-manned bear case (Sec 8).")
-    invalidation_conditions: str = Field(min_length=3, description="Mandatory invalidation (Sec 8).")
+    invalidation_conditions: str = Field(
+        min_length=3, description="Mandatory invalidation (Sec 8)."
+    )
     mispricing_mechanism: str = ""
     bull_case: str = ""
     base_case: str = ""

@@ -3,6 +3,7 @@
 Encodes Constitution Sec 4 (human authority) and Sec 6 (risk): an APPROVE
 requires human_approved=True and cannot approve over a FAILED RiskResult.
 """
+
 from __future__ import annotations
 
 from datetime import datetime

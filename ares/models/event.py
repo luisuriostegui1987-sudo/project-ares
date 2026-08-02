@@ -1,5 +1,6 @@
 """Event — something that happened or will happen; a Catalyst is an Event
 expected to move price (ARES-015)."""
+
 from __future__ import annotations
 
 from datetime import datetime

@@ -3,6 +3,7 @@
 Every value here is authoritative per ARES-015 (Canonical Glossary & Data
 Dictionary). Do not redefine these elsewhere; import from this module.
 """
+
 from __future__ import annotations
 
 from enum import Enum

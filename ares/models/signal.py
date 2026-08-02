@@ -3,6 +3,7 @@
 
 A Signal is *computed*; unlike a Fact it carries no source or knowledge class.
 """
+
 from __future__ import annotations
 
 from datetime import datetime

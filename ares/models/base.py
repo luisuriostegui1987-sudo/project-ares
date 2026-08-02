@@ -1,4 +1,5 @@
 """Shared helpers for ARES domain models (Pydantic v2)."""
+
 from __future__ import annotations
 
 import uuid
