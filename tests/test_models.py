@@ -97,6 +97,7 @@ def test_crwv_thesis_builds():
             "Real hypergrowth AI-infra leader with a ~$99B backlog, but a "
             "richly-priced, heavily-levered equity the whole market watches."
         ),
+        hypothesis="The market underprices CRWV's solvency/refinancing risk relative to its backlog.",
         bull_case="+112% YoY revenue; ~$99B backlog; Nvidia-backed; 1->8 GW.",
         base_case="Growth continues; equity range-bound on financing overhang.",
         bear_case=(

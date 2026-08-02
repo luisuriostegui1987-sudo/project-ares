@@ -46,6 +46,7 @@ class Thesis:
     thesis_summary: str
     bear_case: str          # MANDATORY (Constitution Sec 8)
     invalidation_conditions: str  # MANDATORY (Constitution Sec 8)
+    hypothesis: str = ""   # the single testable claim; formerly the Hypothesis entity (ADR-032)
     mispricing_mechanism: str = ""
     bull_case: str = ""
     base_case: str = ""
