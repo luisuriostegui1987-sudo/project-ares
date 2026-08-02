@@ -60,6 +60,7 @@ jobs:
           --health-retries 10
     env:
       ARES_PG_DSN: postgresql://ares:ares-ci-throwaway@localhost:5432/ares_facts
+      ARES_FACT_STORE: postgres  # explicit persistence mode (Gate 2)
     steps:
       - uses: actions/checkout@v4
 

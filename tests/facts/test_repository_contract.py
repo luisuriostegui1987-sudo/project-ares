@@ -73,6 +73,29 @@ def test_dedup_is_idempotent(repo: FactRepository) -> None:
     assert len(repo.by_fact_key(a.fact_key)) == 1
 
 
+def test_same_assertion_from_two_sources_coexists(repo: FactRepository) -> None:
+    """Corroboration is never destroyed: the record hash embeds source identity,
+    so UNIQUE(content_hash) can only collapse the SAME source record."""
+    a = _fact()
+    b = InstitutionalFact(
+        **{
+            **dict(a),
+            "fact_id": "ifact_" + uuid.uuid4().hex[:12],
+            "source_id": "bloomberg.terminal",
+            "source_locator": "bloomberg:NVDA/revenue/fy2025",
+            "content_hash": "",  # recomputed: differs because provenance differs
+        }
+    )
+    kept_a, kept_b = repo.append(a), repo.append(b)
+    assert kept_a.fact_id != kept_b.fact_id
+    assert kept_a.content_hash != kept_b.content_hash
+    assert kept_a.fact_key == kept_b.fact_key  # same logical assertion
+    stored = {f.fact_id: f for f in repo.by_fact_key(a.fact_key)}
+    assert set(stored) == {kept_a.fact_id, kept_b.fact_id}
+    assert stored[kept_a.fact_id].source_id == "sec.edgar"
+    assert stored[kept_b.fact_id].source_id == "bloomberg.terminal"  # provenance intact
+
+
 def test_future_retrieved_at_rejected(repo: FactRepository) -> None:
     with pytest.raises(FactStoreError, match="future"):
         repo.append(_fact(retrieved_at=utcnow() + timedelta(days=2)))
@@ -175,6 +198,29 @@ def test_event_for_unknown_fact_rejected(repo: FactRepository) -> None:
 def test_repository_has_no_mutation_api(repo: FactRepository) -> None:
     for forbidden in ("update", "delete", "remove", "set_validation_status"):
         assert not hasattr(repo, forbidden)
+
+
+@pytest.mark.skipif(not _PG_DSN, reason="postgres-only: migration lifecycle")
+def test_migrations_are_idempotent_and_reversible() -> None:
+    """up (already applied) -> no-op; down; up -> re-applied; up -> no-op."""
+    from importlib import resources
+
+    import psycopg
+
+    from ares.facts.postgres import apply_migrations
+
+    with psycopg.connect(_PG_DSN or "") as conn:
+        assert apply_migrations(conn) == []  # idempotent: already applied
+        down_sql = (
+            resources.files("ares.facts.migrations")
+            .joinpath("0001_institutional_facts_down.sql")
+            .read_text("utf-8")
+        )
+        with conn.cursor() as cur:
+            cur.execute(down_sql)  # reversal script drops schema cleanly
+        conn.commit()
+        assert apply_migrations(conn) == ["0001_institutional_facts.sql"]  # re-applied
+        assert apply_migrations(conn) == []  # idempotent again
 
 
 @pytest.mark.skipif(not _PG_DSN, reason="postgres-only: database-level append-only trigger")

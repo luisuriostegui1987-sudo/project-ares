@@ -116,10 +116,15 @@ class PostgresFactRepository:
                         f"supersedes_fact_id {fact.supersedes_fact_id!r} is not in the store."
                     )
                 self._check_chain_acyclic(cur, fact)
+            # ON CONFLICT makes concurrent inserts of the same exact source
+            # record deterministic: the first committed row wins, and any
+            # concurrent loser receives the winner's record (identical to the
+            # sequential dedup semantics).
             cur.execute(
                 "INSERT INTO institutional_facts"
                 " (fact_id, fact_key, content_hash, supersedes_fact_id, retrieved_at, record)"
-                " VALUES (%s, %s, %s, %s, %s, %s)",
+                " VALUES (%s, %s, %s, %s, %s, %s)"
+                " ON CONFLICT (content_hash) DO NOTHING",
                 (
                     fact.fact_id,
                     fact.fact_key,
@@ -129,6 +134,16 @@ class PostgresFactRepository:
                     fact.model_dump_json(),
                 ),
             )
+            if cur.rowcount == 0:  # lost a concurrent race: return the winner
+                self._conn.commit()
+                cur.execute(
+                    "SELECT record FROM institutional_facts WHERE content_hash = %s",
+                    (fact.content_hash,),
+                )
+                winner = cur.fetchone()
+                if winner is None:  # pragma: no cover - defensive
+                    raise FactStoreError("Concurrent insert lost and winner not found.")
+                return _parse_record(winner[0])
         self._conn.commit()
         return fact
 
