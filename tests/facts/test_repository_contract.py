@@ -16,9 +16,9 @@ import pytest
 from _helpers import kwargs
 
 from ares.facts import FactRepository, FactStoreError, InMemoryFactStore
-from ares.models import FactValidationEvent, InstitutionalFact
+from ares.models import FactFreshnessEvent, FactValidationEvent, InstitutionalFact
 from ares.models.base import utcnow
-from ares.models.vocab import RevisionType, ValidationStatus
+from ares.models.vocab import FreshnessStatus, RevisionType, ValidationStatus
 
 T1 = datetime(2026, 6, 1, tzinfo=UTC)
 T2 = datetime(2026, 7, 1, tzinfo=UTC)  # decision time
@@ -186,6 +186,29 @@ def test_status_events_are_append_only_and_derived(repo: FactRepository) -> None
     assert repo.usable_for_calculation(fact.fact_id) is False
 
 
+def test_equal_timestamp_events_break_ties_by_append_order(repo: FactRepository) -> None:
+    """Two events with the EXACT same occurred_at: the second appended wins,
+    identically in memory (append order) and PostgreSQL (event_seq)."""
+    fact = repo.append(_fact())
+    for status in (ValidationStatus.VALID, ValidationStatus.CONFLICTED):
+        repo.add_validation_event(
+            FactValidationEvent(
+                fact_id=fact.fact_id, status=status, recorded_by="tests", occurred_at=T1
+            )
+        )
+    assert repo.validation_status(fact.fact_id) is ValidationStatus.CONFLICTED
+    history = repo.validation_history(fact.fact_id)
+    assert [e.status for e in history] == [ValidationStatus.VALID, ValidationStatus.CONFLICTED]
+
+    for freshness in (FreshnessStatus.STALE, FreshnessStatus.FRESH):
+        repo.add_freshness_event(
+            FactFreshnessEvent(
+                fact_id=fact.fact_id, status=freshness, recorded_by="tests", occurred_at=T1
+            )
+        )
+    assert repo.freshness_status(fact.fact_id) is FreshnessStatus.FRESH  # second appended
+
+
 def test_event_for_unknown_fact_rejected(repo: FactRepository) -> None:
     with pytest.raises(FactStoreError, match="Unknown fact_id"):
         repo.add_validation_event(
@@ -221,6 +244,85 @@ def test_migrations_are_idempotent_and_reversible() -> None:
         conn.commit()
         assert apply_migrations(conn) == ["0001_institutional_facts.sql"]  # re-applied
         assert apply_migrations(conn) == []  # idempotent again
+
+
+@pytest.mark.skipif(not _PG_DSN, reason="postgres-only: concurrent initialization")
+def test_concurrent_migration_initialization_is_safe() -> None:
+    """Two connections racing to initialize a fresh database serialize on the
+    advisory lock: exactly one applies migration 0001, the other no-ops."""
+    import threading
+    from importlib import resources
+
+    import psycopg
+
+    from ares.facts.postgres import apply_migrations
+
+    down_sql = (
+        resources.files("ares.facts.migrations")
+        .joinpath("0001_institutional_facts_down.sql")
+        .read_text("utf-8")
+    )
+    with psycopg.connect(_PG_DSN or "") as conn:
+        with conn.cursor() as cur:
+            cur.execute(down_sql)  # fresh database state
+        conn.commit()
+
+    results: list[list[str]] = []
+    errors: list[Exception] = []
+
+    def initialize() -> None:
+        try:
+            with psycopg.connect(_PG_DSN or "") as conn:
+                results.append(apply_migrations(conn))
+        except Exception as exc:  # noqa: BLE001 - the test asserts none occurred
+            errors.append(exc)
+
+    threads = [threading.Thread(target=initialize) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+    assert errors == []
+    assert sorted(results, key=len) == [[], ["0001_institutional_facts.sql"]]
+
+
+@pytest.mark.skipif(not _PG_DSN, reason="postgres-only: JSONB/index integrity constraints")
+def test_direct_inconsistent_insert_is_rejected() -> None:
+    """A raw SQL insert whose indexed columns diverge from the canonical JSONB
+    record must be rejected by the database, column by column."""
+    import psycopg
+
+    fact = _fact()
+    good = (
+        fact.fact_id,
+        fact.fact_key,
+        fact.content_hash,
+        fact.supersedes_fact_id,
+        fact.retrieved_at,
+        fact.model_dump_json(),
+    )
+    tampered = [
+        ("ifact_drifted", *good[1:]),  # fact_id != record->>'fact_id'
+        (good[0], "drifted|key", *good[2:]),  # fact_key drift
+        (good[0], good[1], "0" * 64, *good[3:]),  # content_hash drift
+        (*good[:3], "ifact_ghost_parent", *good[4:]),  # supersedes drift (non-null vs null)
+        (*good[:4], fact.retrieved_at + timedelta(days=1), good[5]),  # retrieved_at drift
+    ]
+    with psycopg.connect(_PG_DSN or "") as conn:
+        for row in tampered:
+            with (
+                pytest.raises((psycopg.errors.CheckViolation, psycopg.errors.ForeignKeyViolation)),
+                conn.cursor() as cur,
+            ):
+                cur.execute(
+                    "INSERT INTO institutional_facts"
+                    " (fact_id, fact_key, content_hash, supersedes_fact_id,"
+                    "  retrieved_at, record)"
+                    " VALUES (%s, %s, %s, %s, %s, %s)",
+                    row,
+                )
+            conn.rollback()
 
 
 @pytest.mark.skipif(not _PG_DSN, reason="postgres-only: database-level append-only trigger")

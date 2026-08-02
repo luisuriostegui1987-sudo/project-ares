@@ -42,24 +42,40 @@ def _parse_record(raw: Any) -> InstitutionalFact:
     return InstitutionalFact.model_validate(raw)
 
 
+# Deterministic advisory-lock key specific to ARES migrations ("ARES" in hex).
+# pg_advisory_xact_lock is transaction-scoped: it is ALWAYS released when the
+# transaction commits or rolls back — no explicit cleanup can be forgotten.
+MIGRATION_LOCK_KEY = 0x41524553
+
+
 def apply_migrations(conn: Any) -> list[str]:
-    """Apply pending SQL migrations in order; record them in schema_migrations."""
+    """Apply pending SQL migrations in order; record them in schema_migrations.
+
+    Concurrency-safe: discovery and execution run under a transaction-scoped
+    advisory lock, so two processes initializing a fresh database serialize —
+    one applies, the other observes the recorded version and no-ops.
+    """
     applied: list[str] = []
-    with conn.cursor() as cur:
-        cur.execute(
-            "CREATE TABLE IF NOT EXISTS schema_migrations ("
-            " version TEXT PRIMARY KEY,"
-            " applied_at TIMESTAMPTZ NOT NULL DEFAULT now())"
-        )
-        for name in _MIGRATIONS:
-            cur.execute("SELECT 1 FROM schema_migrations WHERE version = %s", (name,))
-            if cur.fetchone():
-                continue
-            sql = resources.files("ares.facts.migrations").joinpath(name).read_text("utf-8")
-            cur.execute(sql)
-            cur.execute("INSERT INTO schema_migrations (version) VALUES (%s)", (name,))
-            applied.append(name)
-    conn.commit()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT pg_advisory_xact_lock(%s)", (MIGRATION_LOCK_KEY,))
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS schema_migrations ("
+                " version TEXT PRIMARY KEY,"
+                " applied_at TIMESTAMPTZ NOT NULL DEFAULT now())"
+            )
+            for name in _MIGRATIONS:
+                cur.execute("SELECT 1 FROM schema_migrations WHERE version = %s", (name,))
+                if cur.fetchone():
+                    continue
+                sql = resources.files("ares.facts.migrations").joinpath(name).read_text("utf-8")
+                cur.execute(sql)
+                cur.execute("INSERT INTO schema_migrations (version) VALUES (%s)", (name,))
+                applied.append(name)
+    except Exception:
+        conn.rollback()  # releases the advisory lock
+        raise
+    conn.commit()  # releases the advisory lock
     return applied
 
 
@@ -219,7 +235,8 @@ class PostgresFactRepository:
         with self._conn.cursor() as cur:
             cur.execute(
                 "SELECT event_id, fact_id, status, reason, occurred_at, recorded_by"
-                " FROM fact_validation_events WHERE fact_id = %s ORDER BY occurred_at",
+                " FROM fact_validation_events WHERE fact_id = %s"
+                " ORDER BY occurred_at ASC, event_seq ASC",
                 (fact_id,),
             )
             rows = cur.fetchall()
@@ -279,8 +296,11 @@ class PostgresFactRepository:
     def _latest_event_status(self, table: str, fact_id: str) -> str | None:
         self.get(fact_id)  # raises on unknown fact
         with self._conn.cursor() as cur:
+            # event_seq breaks occurred_at ties by insertion order, matching
+            # in-memory append-order semantics deterministically.
             cur.execute(
-                f"SELECT status FROM {table} WHERE fact_id = %s ORDER BY occurred_at DESC LIMIT 1",
+                f"SELECT status FROM {table}"
+                " WHERE fact_id = %s ORDER BY occurred_at DESC, event_seq DESC LIMIT 1",
                 (fact_id,),
             )
             row = cur.fetchone()

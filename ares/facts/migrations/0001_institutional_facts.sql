@@ -9,14 +9,30 @@ CREATE TABLE IF NOT EXISTS institutional_facts (
     content_hash       TEXT        NOT NULL UNIQUE,
     supersedes_fact_id TEXT        REFERENCES institutional_facts (fact_id),
     retrieved_at       TIMESTAMPTZ NOT NULL,
-    record             JSONB       NOT NULL
+    record             JSONB       NOT NULL,
+    -- The JSONB record is canonical; the indexed columns are projections of
+    -- it and the DATABASE guarantees they can never diverge (a direct SQL
+    -- insert with mismatched columns is rejected).
+    CONSTRAINT chk_fact_id_matches_record CHECK (fact_id = record ->> 'fact_id'),
+    CONSTRAINT chk_fact_key_matches_record CHECK (fact_key = record ->> 'fact_key'),
+    CONSTRAINT chk_content_hash_matches_record CHECK (content_hash = record ->> 'content_hash'),
+    CONSTRAINT chk_supersedes_matches_record CHECK (
+        supersedes_fact_id IS NOT DISTINCT FROM record ->> 'supersedes_fact_id'
+    ),
+    CONSTRAINT chk_retrieved_at_matches_record CHECK (
+        retrieved_at = (record ->> 'retrieved_at')::timestamptz
+    )
 );
 
 CREATE INDEX IF NOT EXISTS idx_facts_fact_key ON institutional_facts (fact_key);
 CREATE INDEX IF NOT EXISTS idx_facts_retrieved_at ON institutional_facts (retrieved_at);
 CREATE INDEX IF NOT EXISTS idx_facts_supersedes ON institutional_facts (supersedes_fact_id);
 
+-- event_seq is a database-internal, monotonically increasing insertion-order
+-- tie-breaker for equal occurred_at timestamps. It is NOT part of the public
+-- ARES-FACT-001 event model; event_id remains the public identity.
 CREATE TABLE IF NOT EXISTS fact_validation_events (
+    event_seq   BIGINT GENERATED ALWAYS AS IDENTITY,
     event_id    TEXT PRIMARY KEY,
     fact_id     TEXT        NOT NULL REFERENCES institutional_facts (fact_id),
     status      TEXT        NOT NULL,
@@ -25,9 +41,11 @@ CREATE TABLE IF NOT EXISTS fact_validation_events (
     recorded_by TEXT        NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_validation_events_fact ON fact_validation_events (fact_id);
+CREATE INDEX IF NOT EXISTS idx_validation_events_fact
+    ON fact_validation_events (fact_id, occurred_at, event_seq);
 
 CREATE TABLE IF NOT EXISTS fact_freshness_events (
+    event_seq   BIGINT GENERATED ALWAYS AS IDENTITY,
     event_id    TEXT PRIMARY KEY,
     fact_id     TEXT        NOT NULL REFERENCES institutional_facts (fact_id),
     status      TEXT        NOT NULL,
@@ -36,7 +54,8 @@ CREATE TABLE IF NOT EXISTS fact_freshness_events (
     recorded_by TEXT        NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_freshness_events_fact ON fact_freshness_events (fact_id);
+CREATE INDEX IF NOT EXISTS idx_freshness_events_fact
+    ON fact_freshness_events (fact_id, occurred_at, event_seq);
 
 -- Append-only is enforced by the DATABASE, not just the repository code:
 -- any UPDATE or DELETE on facts or status events raises.
