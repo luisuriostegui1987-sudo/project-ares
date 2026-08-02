@@ -24,7 +24,7 @@ from .facts import (
 
 logger = logging.getLogger(__name__)
 
-RULE_VERSION = "SIGNAL-1.1"
+RULE_VERSION = "SIGNAL-1.2"
 
 # Canonical revenue pairs, strongest first: TTM preferred, fiscal-year fallback.
 _REVENUE_PAIRS = (
@@ -59,6 +59,20 @@ def revenue_growth_signal(entity: Entity, facts: list[Fact]) -> Signal | None:
             "signals: revenue growth skipped for %s (missing usable facts)", entity.entity_id
         )
         return None
+    if window == "FY":
+        # Comparable-period guard: an FY pair's as_of dates are fiscal period
+        # ends, so YoY comparability requires them ~1 year apart. A pair from
+        # non-consecutive fiscal years must NOT produce a YoY-labeled signal.
+        # (TTM pair dates are stamped at one measurement time by construction.)
+        gap_days = (current.as_of_timestamp - prior.as_of_timestamp).days
+        if not 300 <= gap_days <= 430:
+            logger.warning(
+                "signals: FY revenue pair for %s is not YoY-comparable "
+                "(%d days between period ends); suppressing signal",
+                entity.entity_id,
+                gap_days,
+            )
+            return None
     if not isinstance(current.value, (int, float)) or not isinstance(prior.value, (int, float)):
         logger.warning("signals: revenue facts for %s are non-numeric", entity.entity_id)
         return None

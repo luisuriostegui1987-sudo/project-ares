@@ -9,6 +9,8 @@ import pytest
 from ares.models import Fact, KnowledgeClass
 from ares.pipeline.entity import Entity, MockEntityProvider, resolve_entity
 from ares.pipeline.facts import (
+    METRIC_REVENUE_FY_CURRENT,
+    METRIC_REVENUE_FY_PRIOR,
     METRIC_REVENUE_TTM_CURRENT,
     METRIC_REVENUE_TTM_PRIOR,
     MockFactsProvider,
@@ -22,7 +24,10 @@ def _nvda() -> Entity:
 
 
 def _rev_fact(
-    metric: str, value: float | str, knowledge_class=KnowledgeClass.HIGH_CONFIDENCE
+    metric: str,
+    value: float | str,
+    knowledge_class=KnowledgeClass.HIGH_CONFIDENCE,
+    as_of: datetime | None = None,
 ) -> Fact:
     return Fact(
         entity_id="NVDA",
@@ -30,7 +35,7 @@ def _rev_fact(
         value=value,
         source_name="MOCK",
         source_id_or_url="mock://x",
-        as_of_timestamp=datetime(2026, 7, 31, tzinfo=UTC),
+        as_of_timestamp=as_of or datetime(2026, 7, 31, tzinfo=UTC),
         knowledge_class=knowledge_class,
     )
 
@@ -79,6 +84,29 @@ def test_non_numeric_values_guarded():
         _rev_fact(METRIC_REVENUE_TTM_PRIOR, 50.0),
     ]
     assert revenue_growth_signal(entity, facts) is None
+
+
+def test_non_comparable_fy_pair_is_suppressed():
+    """An FY pair from non-consecutive fiscal years must not be labeled YoY."""
+    entity = _nvda()
+    facts = [
+        _rev_fact(METRIC_REVENUE_FY_CURRENT, 200.0, as_of=datetime(2026, 1, 25, tzinfo=UTC)),
+        _rev_fact(METRIC_REVENUE_FY_PRIOR, 100.0, as_of=datetime(2024, 1, 28, tzinfo=UTC)),
+    ]
+    assert revenue_growth_signal(entity, facts) is None
+
+
+def test_comparable_fy_pair_produces_yoy_signal():
+    """Consecutive fiscal-year ends (~364 days apart) pass the guard."""
+    entity = _nvda()
+    facts = [
+        _rev_fact(METRIC_REVENUE_FY_CURRENT, 200.0, as_of=datetime(2026, 1, 25, tzinfo=UTC)),
+        _rev_fact(METRIC_REVENUE_FY_PRIOR, 100.0, as_of=datetime(2025, 1, 26, tzinfo=UTC)),
+    ]
+    signal = revenue_growth_signal(entity, facts)
+    assert signal is not None
+    assert signal.lookback_window == "FY"
+    assert signal.measured_value == pytest.approx(100.0)
 
 
 def test_foreign_facts_rejected():
