@@ -49,6 +49,50 @@ def test_unknown_ticker_is_404(client: TestClient) -> None:
     assert "Unknown entity" in response.json()["detail"]
 
 
+def test_unknown_ticker_persists_nothing(client: TestClient) -> None:
+    """CRO atomicity: the approved error, and zero ResearchReports stored."""
+    assert client.post("/research/analyze", json={"ticker": "ZZZZ"}).status_code == 404
+    assert client.get("/research/reports").json() == []
+
+
+def test_validation_failure_persists_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """CRO atomicity: a pipeline/model validation failure returns an error and
+    persists zero complete or partial reports."""
+    from ares.service import research as research_module
+
+    class FailingPipeline:
+        def __init__(self, *args: object, **kwargs: object) -> None: ...
+
+        def run(self, ticker: str) -> None:
+            raise ValueError("Report section 'facts' contains foreign entity_ids.")
+
+    monkeypatch.setattr(research_module, "ResearchPipeline", FailingPipeline)
+    store = InMemoryReportStore()
+    client = TestClient(create_app(ResearchService(reports=store)))
+    response = client.post("/research/analyze", json={"ticker": "NVDA"})
+    assert response.status_code == 400
+    assert "foreign entity_ids" in response.json()["detail"]
+    assert store.list_summaries() == []  # nothing persisted, complete or partial
+
+
+def test_sparse_report_is_valid_success_and_retrievable(client: TestClient) -> None:
+    """CRO sparse-output guarantee: zero facts/claims/signals is a SUCCESS,
+    empty arrays stay empty, nothing invents a recommendation, and the
+    sparse report persists and remains retrievable."""
+    response = client.post("/research/analyze", json={"ticker": "AAPL"})
+    assert response.status_code == 200
+    report = response.json()
+    assert report["facts"] == []
+    assert report["signals"] == []
+    assert report["evidence"]["claims"] == []
+    # No invented recommendation: the schema carries no such field at all.
+    forbidden = {"recommendation", "rating", "action", "buy", "sell", "target_price"}
+    assert forbidden.isdisjoint(report.keys())
+    fetched = client.get(f"/research/reports/{report['report_id']}")
+    assert fetched.status_code == 200
+    assert fetched.json() == report
+
+
 def test_invalid_data_mode_is_422(client: TestClient) -> None:
     response = client.post("/research/analyze", json={"ticker": "NVDA", "data_mode": "guess"})
     assert response.status_code == 422

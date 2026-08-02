@@ -83,8 +83,12 @@
 </main>
 <footer>All access flows through the ARES institutional API. No scoring, risk or decisions exist here — research only.</footer>
 <script>
+// SECURITY: every dynamic (report-derived or externally sourced) value is
+// rendered EXCLUSIVELY through safe DOM text APIs (createElement/textContent/
+// createTextNode). Dynamic markup interpolation is never used anywhere here;
+// the test suite structurally enforces this on the served asset.
 const $ = (id) => document.getElementById(id);
-const fmt = (v) => typeof v === "number" ? v.toLocaleString("en-US") : v;
+const fmt = (v) => typeof v === "number" ? v.toLocaleString("en-US") : String(v ?? "");
 
 async function api(path, options) {
   const response = await fetch(path, options);
@@ -93,41 +97,97 @@ async function api(path, options) {
   return body;
 }
 
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;  // safe text API only
+  return node;
+}
+
+function modeTag(mode) {
+  // mode is only COMPARED to pick a class; the label itself is textContent.
+  return el("span", "tag " + (mode === "MOCK" ? "mock" : "live"), mode);
+}
+
+function cells(defs) {
+  const tr = document.createElement("tr");
+  for (const d of defs) {
+    tr.appendChild(d instanceof HTMLElement ? d : el("td", d.className, d.text));
+  }
+  return tr;
+}
+
+function fillRows(tbody, rows, emptyText, cols) {
+  tbody.replaceChildren();
+  if (!rows.length) {
+    const td = el("td", "dim", emptyText);
+    td.colSpan = cols;
+    tbody.appendChild(cells([td]));
+    return;
+  }
+  for (const tr of rows) tbody.appendChild(tr);
+}
+
 function renderReport(r) {
   $("report-card").hidden = false;
   const isMock = r.data_mode === "MOCK";
-  $("mock-banner").hidden = !isMock;
-  if (isMock) $("mock-banner").textContent =
-    "WARNING: This report uses mock data and is not investment research.";
+  const banner = $("mock-banner");
+  banner.hidden = !isMock;
+  banner.textContent = isMock
+    ? "WARNING: This report uses mock data and is not investment research."
+    : "";
   $("report-title").textContent = `${r.entity.name} (${r.entity.ticker})`;
-  $("report-meta").innerHTML =
-    `<span class="tag ${isMock ? "mock" : "live"}">${r.data_mode}</span> ` +
-    `${r.report_id} · pipeline ${r.pipeline_version} · ${r.generated_at}`;
+  $("report-meta").replaceChildren(
+    modeTag(r.data_mode),
+    document.createTextNode(
+      ` ${r.report_id} · pipeline ${r.pipeline_version} · ${r.generated_at}`
+    )
+  );
   $("report-context").textContent = r.context.business_summary;
-  $("facts-body").innerHTML = r.facts.map(f =>
-    `<tr><td>${f.metric_name}</td><td class="num">${fmt(f.value)} ${f.unit ?? ""}</td>` +
-    `<td>${f.knowledge_class}</td><td class="dim">${f.source_name}</td></tr>`).join("") ||
-    `<tr><td colspan="4" class="dim">No facts.</td></tr>`;
-  $("signals-body").innerHTML = r.signals.map(s =>
-    `<tr><td>${s.signal_type}</td><td class="num">${fmt(s.measured_value)}</td>` +
-    `<td>${s.direction ?? "n/a"}</td><td class="dim">${s.rule_version}</td></tr>`).join("") ||
-    `<tr><td colspan="4" class="dim">No signals — a missing signal is a valid outcome.</td></tr>`;
-  $("claims-list").innerHTML = r.evidence.claims.map(c =>
-    `<li>${c.statement} <span class="tag">${c.knowledge_class}</span></li>`).join("") ||
-    `<li class="dim">No claims.</li>`;
+  fillRows($("facts-body"), r.facts.map((f) => cells([
+    { text: f.metric_name },
+    { text: `${fmt(f.value)} ${f.unit ?? ""}`, className: "num" },
+    { text: f.knowledge_class },
+    { text: f.source_name, className: "dim" },
+  ])), "No facts.", 4);
+  fillRows($("signals-body"), r.signals.map((s) => cells([
+    { text: s.signal_type },
+    { text: fmt(s.measured_value), className: "num" },
+    { text: s.direction ?? "n/a" },
+    { text: s.rule_version, className: "dim" },
+  ])), "No signals — a missing signal is a valid outcome.", 4);
+  const list = $("claims-list");
+  list.replaceChildren();
+  if (!r.evidence.claims.length) {
+    list.appendChild(el("li", "dim", "No claims."));
+  }
+  for (const c of r.evidence.claims) {
+    const li = document.createElement("li");
+    li.appendChild(document.createTextNode(c.statement + " "));
+    li.appendChild(el("span", "tag", c.knowledge_class));
+    list.appendChild(li);
+  }
 }
 
 async function refreshList() {
   const rows = await api("/research/reports");
-  $("reports-body").innerHTML = rows.map(s =>
-    `<tr class="rowlink" data-id="${s.report_id}"><td>${s.generated_at}</td>` +
-    `<td>${s.ticker}</td><td><span class="tag ${s.data_mode === "MOCK" ? "mock" : "live"}">` +
-    `${s.data_mode}</span></td><td class="num">${s.fact_count}</td>` +
-    `<td class="num">${s.signal_count}</td><td class="num">${s.claim_count}</td></tr>`).join("") ||
-    `<tr><td colspan="6" class="dim">None yet.</td></tr>`;
-  for (const row of document.querySelectorAll(".rowlink")) {
-    row.onclick = async () => renderReport(await api(`/research/reports/${row.dataset.id}`));
-  }
+  fillRows($("reports-body"), rows.map((s) => {
+    const modeCell = el("td");
+    modeCell.appendChild(modeTag(s.data_mode));
+    const tr = cells([
+      { text: s.generated_at },
+      { text: s.ticker },
+      modeCell,
+      { text: String(s.fact_count), className: "num" },
+      { text: String(s.signal_count), className: "num" },
+      { text: String(s.claim_count), className: "num" },
+    ]);
+    tr.className = "rowlink";
+    tr.addEventListener("click", async () => {
+      renderReport(await api("/research/reports/" + encodeURIComponent(s.report_id)));
+    });
+    return tr;
+  }), "None yet.", 6);
 }
 
 $("analyze-form").onsubmit = async (event) => {
