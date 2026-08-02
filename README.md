@@ -39,13 +39,16 @@ These aren't just schemas. The validators make governance non-optional:
 python3 tests/test_models.py     # -> "7 tests passed."
 ```
 
-## A note on the stack (ADR-023)
+## Stack (ADR-023)
 
-The target stack (ADR-023, *Proposed*) is **Pydantic v2**. Pydantic could not be
-installed in the build sandbox (no network), so this first commit uses the
-**standard library** (`dataclasses` + `Enum`) with equivalent `__post_init__`
-validation, so the commit **runs and is verified now** rather than shipping
-untested code. Migration is field-for-field: each `@dataclass` becomes a
+Domain models are **Pydantic v2** `BaseModel`s (Sprint 1 Definition of Done). Modern
+typing (`list[str]`, `X | None`). Governance is enforced by field constraints and
+`@model_validator`s.
+
+```bash
+pip install -r requirements.txt
+pytest -q && ruff check . && mypy ares
+```
 `BaseModel`; each `require(...)` check becomes a `@field_validator` /
 `@model_validator`. `requirements.txt` lists the target deps.
 
