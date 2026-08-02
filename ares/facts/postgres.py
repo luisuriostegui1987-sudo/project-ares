@@ -32,7 +32,7 @@ except ImportError:  # pragma: no cover - exercised only without the extra
 
 logger = logging.getLogger(__name__)
 
-_MIGRATIONS = ("0001_institutional_facts.sql",)
+_MIGRATIONS = ("0001_institutional_facts.sql", "0002_research_reports.sql")
 
 
 def _parse_record(raw: Any) -> InstitutionalFact:

@@ -4,13 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ares-core"
-version = "0.1.0"
+version = "0.4.0"
 description = "Project ARES — AI-native investment research (core)"
 requires-python = ">=3.12"
 dependencies = ["pydantic>=2.7"]
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]>=3.1"]
+api = ["fastapi>=0.115", "uvicorn>=0.30"]
 
 [project.scripts]
 ares = "ares.cli:main"

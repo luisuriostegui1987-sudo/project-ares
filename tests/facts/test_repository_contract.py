@@ -226,23 +226,14 @@ def test_repository_has_no_mutation_api(repo: FactRepository) -> None:
 @pytest.mark.skipif(not _PG_DSN, reason="postgres-only: migration lifecycle")
 def test_migrations_are_idempotent_and_reversible() -> None:
     """up (already applied) -> no-op; down; up -> re-applied; up -> no-op."""
-    from importlib import resources
-
     import psycopg
 
-    from ares.facts.postgres import apply_migrations
+    from ares.facts.postgres import _MIGRATIONS, apply_migrations
 
     with psycopg.connect(_PG_DSN or "") as conn:
         assert apply_migrations(conn) == []  # idempotent: already applied
-        down_sql = (
-            resources.files("ares.facts.migrations")
-            .joinpath("0001_institutional_facts_down.sql")
-            .read_text("utf-8")
-        )
-        with conn.cursor() as cur:
-            cur.execute(down_sql)  # reversal script drops schema cleanly
-        conn.commit()
-        assert apply_migrations(conn) == ["0001_institutional_facts.sql"]  # re-applied
+        _run_down_scripts(conn)  # reversal in strict reverse order (0002 -> 0001)
+        assert apply_migrations(conn) == list(_MIGRATIONS)  # re-applied, in order
         assert apply_migrations(conn) == []  # idempotent again
 
 
@@ -251,21 +242,13 @@ def test_concurrent_migration_initialization_is_safe() -> None:
     """Two connections racing to initialize a fresh database serialize on the
     advisory lock: exactly one applies migration 0001, the other no-ops."""
     import threading
-    from importlib import resources
 
     import psycopg
 
     from ares.facts.postgres import apply_migrations
 
-    down_sql = (
-        resources.files("ares.facts.migrations")
-        .joinpath("0001_institutional_facts_down.sql")
-        .read_text("utf-8")
-    )
     with psycopg.connect(_PG_DSN or "") as conn:
-        with conn.cursor() as cur:
-            cur.execute(down_sql)  # fresh database state
-        conn.commit()
+        _run_down_scripts(conn)  # fresh database state
 
     results: list[list[str]] = []
     errors: list[Exception] = []
@@ -284,7 +267,23 @@ def test_concurrent_migration_initialization_is_safe() -> None:
         t.join()
 
     assert errors == []
-    assert sorted(results, key=len) == [[], ["0001_institutional_facts.sql"]]
+    from ares.facts.postgres import _MIGRATIONS
+
+    assert sorted(results, key=len) == [[], list(_MIGRATIONS)]
+
+
+def _run_down_scripts(conn: object) -> None:
+    """Execute every down script in strict reverse migration order."""
+    from importlib import resources
+
+    from ares.facts.postgres import _MIGRATIONS
+
+    for name in reversed(_MIGRATIONS):
+        down_name = name.replace(".sql", "_down.sql")
+        sql = resources.files("ares.facts.migrations").joinpath(down_name).read_text("utf-8")
+        with conn.cursor() as cur:  # type: ignore[attr-defined]
+            cur.execute(sql)
+        conn.commit()  # type: ignore[attr-defined]
 
 
 @pytest.mark.skipif(not _PG_DSN, reason="postgres-only: JSONB/index integrity constraints")

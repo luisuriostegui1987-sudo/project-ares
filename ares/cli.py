@@ -32,6 +32,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="mock: labeled sample data (default). live: real SEC EDGAR data; "
         "fails loudly on error, never falls back to mocks.",
     )
+
+    serve = sub.add_parser("serve", help="Run the ARES institutional API (the single entry point).")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
     return parser
 
 
@@ -61,6 +65,17 @@ def main(argv: list[str] | None = None) -> int:
                 fh.write(payload + "\n")
             print(f"report written to {args.out}", file=sys.stderr)
         print(payload if args.json else render_text(report))
+        return 0
+    if args.command == "serve":
+        try:
+            import uvicorn
+
+            from ares.api import create_app
+        except ImportError as exc:  # pragma: no cover - requires missing extra
+            print(f"error: the API requires the 'api' extra ({exc}).", file=sys.stderr)
+            print("install with: pip install 'ares-core[api]'", file=sys.stderr)
+            return 1
+        uvicorn.run(create_app(), host=args.host, port=args.port)
         return 0
     return 2  # pragma: no cover - argparse enforces the subcommand
 

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARES — Research Console</title>
+<style>
+  :root { --bg:#0f1420; --panel:#171e2e; --line:#2a3450; --text:#e8ecf5; --dim:#8b96ad;
+          --accent:#4f8cff; --warn-bg:#3a2a10; --warn:#ffb454; --good:#39d98a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding:18px 24px; border-bottom:1px solid var(--line);
+           display:flex; align-items:baseline; gap:12px; }
+  header h1 { margin:0; font-size:18px; letter-spacing:.06em; }
+  header span { color:var(--dim); font-size:13px; }
+  main { max-width:980px; margin:0 auto; padding:24px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+          padding:18px 20px; margin-bottom:18px; }
+  form { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  input, select, button { font:inherit; border-radius:8px; border:1px solid var(--line);
+          background:var(--bg); color:var(--text); padding:8px 12px; }
+  input { text-transform:uppercase; width:130px; }
+  button { background:var(--accent); border-color:var(--accent); color:#fff; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .banner { background:var(--warn-bg); color:var(--warn); border:1px solid var(--warn);
+            border-radius:8px; padding:10px 14px; margin:12px 0; font-weight:600; }
+  .error { color:#ff6b6b; margin:10px 0; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; font-size:14px; }
+  th, td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--line); }
+  th { color:var(--dim); font-weight:600; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:99px; font-size:12px;
+         border:1px solid var(--line); color:var(--dim); }
+  .tag.live { color:var(--good); border-color:var(--good); }
+  .tag.mock { color:var(--warn); border-color:var(--warn); }
+  h2 { font-size:15px; margin:0 0 8px; color:var(--dim); text-transform:uppercase;
+       letter-spacing:.08em; }
+  .rowlink { cursor:pointer; }
+  .rowlink:hover td { background:#1d2740; }
+  .dim { color:var(--dim); }
+  footer { color:var(--dim); font-size:12px; padding:12px 24px; border-top:1px solid var(--line);
+           text-align:center; }
+</style>
+</head>
+<body>
+<header><h1>ARES</h1><span>Research Console — paper-only; a human makes every capital decision</span></header>
+<main>
+  <div class="card">
+    <h2>Run research</h2>
+    <form id="analyze-form">
+      <input id="ticker" placeholder="NVDA" required maxlength="10" autocomplete="off">
+      <select id="mode">
+        <option value="mock" selected>MOCK (sample data)</option>
+        <option value="live">LIVE (SEC EDGAR)</option>
+      </select>
+      <button id="run" type="submit">Analyze</button>
+    </form>
+    <div id="error" class="error" hidden></div>
+  </div>
+
+  <div class="card" id="report-card" hidden>
+    <div id="mock-banner" class="banner" hidden></div>
+    <h2 id="report-title"></h2>
+    <p id="report-meta" class="dim"></p>
+    <p id="report-context"></p>
+    <h2>Facts</h2>
+    <table><thead><tr><th>Metric</th><th class="num">Value</th><th>Class</th><th>Source</th></tr></thead>
+      <tbody id="facts-body"></tbody></table>
+    <h2>Signals</h2>
+    <table><thead><tr><th>Signal</th><th class="num">Value</th><th>Direction</th><th>Rule</th></tr></thead>
+      <tbody id="signals-body"></tbody></table>
+    <h2>Evidence</h2>
+    <ul id="claims-list"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Stored reports</h2>
+    <table><thead><tr><th>Generated</th><th>Ticker</th><th>Mode</th><th class="num">Facts</th>
+      <th class="num">Signals</th><th class="num">Claims</th></tr></thead>
+      <tbody id="reports-body"><tr><td colspan="6" class="dim">None yet.</td></tr></tbody></table>
+  </div>
+</main>
+<footer>All access flows through the ARES institutional API. No scoring, risk or decisions exist here — research only.</footer>
+<script>
+// SECURITY: every dynamic (report-derived or externally sourced) value is
+// rendered EXCLUSIVELY through safe DOM text APIs (createElement/textContent/
+// createTextNode). Dynamic markup interpolation is never used anywhere here;
+// the test suite structurally enforces this on the served asset.
+const $ = (id) => document.getElementById(id);
+const fmt = (v) => typeof v === "number" ? v.toLocaleString("en-US") : String(v ?? "");
+
+async function api(path, options) {
+  const response = await fetch(path, options);
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.detail || response.statusText);
+  return body;
+}
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;  // safe text API only
+  return node;
+}
+
+function modeTag(mode) {
+  // mode is only COMPARED to pick a class; the label itself is textContent.
+  return el("span", "tag " + (mode === "MOCK" ? "mock" : "live"), mode);
+}
+
+function cells(defs) {
+  const tr = document.createElement("tr");
+  for (const d of defs) {
+    tr.appendChild(d instanceof HTMLElement ? d : el("td", d.className, d.text));
+  }
+  return tr;
+}
+
+function fillRows(tbody, rows, emptyText, cols) {
+  tbody.replaceChildren();
+  if (!rows.length) {
+    const td = el("td", "dim", emptyText);
+    td.colSpan = cols;
+    tbody.appendChild(cells([td]));
+    return;
+  }
+  for (const tr of rows) tbody.appendChild(tr);
+}
+
+function renderReport(r) {
+  $("report-card").hidden = false;
+  const isMock = r.data_mode === "MOCK";
+  const banner = $("mock-banner");
+  banner.hidden = !isMock;
+  banner.textContent = isMock
+    ? "WARNING: This report uses mock data and is not investment research."
+    : "";
+  $("report-title").textContent = `${r.entity.name} (${r.entity.ticker})`;
+  $("report-meta").replaceChildren(
+    modeTag(r.data_mode),
+    document.createTextNode(
+      ` ${r.report_id} · pipeline ${r.pipeline_version} · ${r.generated_at}`
+    )
+  );
+  $("report-context").textContent = r.context.business_summary;
+  fillRows($("facts-body"), r.facts.map((f) => cells([
+    { text: f.metric_name },
+    { text: `${fmt(f.value)} ${f.unit ?? ""}`, className: "num" },
+    { text: f.knowledge_class },
+    { text: f.source_name, className: "dim" },
+  ])), "No facts.", 4);
+  fillRows($("signals-body"), r.signals.map((s) => cells([
+    { text: s.signal_type },
+    { text: fmt(s.measured_value), className: "num" },
+    { text: s.direction ?? "n/a" },
+    { text: s.rule_version, className: "dim" },
+  ])), "No signals — a missing signal is a valid outcome.", 4);
+  const list = $("claims-list");
+  list.replaceChildren();
+  if (!r.evidence.claims.length) {
+    list.appendChild(el("li", "dim", "No claims."));
+  }
+  for (const c of r.evidence.claims) {
+    const li = document.createElement("li");
+    li.appendChild(document.createTextNode(c.statement + " "));
+    li.appendChild(el("span", "tag", c.knowledge_class));
+    list.appendChild(li);
+  }
+}
+
+async function refreshList() {
+  const rows = await api("/research/reports");
+  fillRows($("reports-body"), rows.map((s) => {
+    const modeCell = el("td");
+    modeCell.appendChild(modeTag(s.data_mode));
+    const tr = cells([
+      { text: s.generated_at },
+      { text: s.ticker },
+      modeCell,
+      { text: String(s.fact_count), className: "num" },
+      { text: String(s.signal_count), className: "num" },
+      { text: String(s.claim_count), className: "num" },
+    ]);
+    tr.className = "rowlink";
+    tr.addEventListener("click", async () => {
+      renderReport(await api("/research/reports/" + encodeURIComponent(s.report_id)));
+    });
+    return tr;
+  }), "None yet.", 6);
+}
+
+$("analyze-form").onsubmit = async (event) => {
+  event.preventDefault();
+  $("error").hidden = true;
+  $("run").disabled = true;
+  try {
+    const report = await api("/research/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ticker: $("ticker").value.trim().toUpperCase(),
+        data_mode: $("mode").value,
+      }),
+    });
+    renderReport(report);
+    await refreshList();
+  } catch (error) {
+    $("error").textContent = error.message;
+    $("error").hidden = false;
+  } finally {
+    $("run").disabled = false;
+  }
+};
+
+refreshList().catch(() => {});
+</script>
+</body>
+</html>
