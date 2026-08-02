@@ -6,7 +6,14 @@
 ares analyze NVDA                       # mock mode (labeled sample data)
 ares analyze NVDA --json                # canonical JSON report
 ares analyze NVDA --data-mode live      # real SEC EDGAR data (Sprint 2)
+ares serve                              # institutional API + web console (Sprint 4)
 ```
+
+The API (FastAPI; `pip install -e ".[api]"`) is the **single entry point** for
+clients: `POST /research/analyze`, `GET /research/reports[/{id}]`, `GET /health`
+and a self-contained web console at `/`. Research reports persist append-only —
+in memory by default, PostgreSQL with `ARES_FACT_STORE=postgres` + `ARES_PG_DSN`
+(same explicit, no-silent-fallback selection as the fact store).
 
 LIVE mode ingests real SEC EDGAR company facts as immutable, append-only
 `InstitutionalFact` records (ARES-FACT-001: deterministic `fact_key`,
