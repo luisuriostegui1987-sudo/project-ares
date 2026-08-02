@@ -86,3 +86,14 @@ class PostgresReportRepository:
             cur.execute("SELECT record FROM research_reports ORDER BY generated_at DESC")
             rows = cur.fetchall()
         return [ReportSummary.from_report(_parse(r[0])) for r in rows]
+
+    def ping(self) -> str:
+        """Minimal safe connectivity probe. Label carries no connection details."""
+        try:
+            with self._conn.cursor() as cur:
+                cur.execute("SELECT 1")
+                cur.fetchone()
+        except Exception:
+            self._conn.rollback()
+            raise
+        return "postgres-ok"
