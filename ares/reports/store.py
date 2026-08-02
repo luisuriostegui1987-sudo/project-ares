@@ -28,3 +28,6 @@ class InMemoryReportStore:
     def list_summaries(self) -> list[ReportSummary]:
         summaries = [ReportSummary.from_report(r) for r in self._reports.values()]
         return sorted(summaries, key=lambda s: s.generated_at, reverse=True)
+
+    def ping(self) -> str:
+        return "memory"

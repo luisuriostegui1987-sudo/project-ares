@@ -58,3 +58,10 @@ class ReportRepository(Protocol):
     def get(self, report_id: str) -> ResearchReport: ...
 
     def list_summaries(self) -> list[ReportSummary]: ...
+
+    def ping(self) -> str:
+        """Health probe. Returns a short backend label; raises on failure.
+
+        Implementations must never include connection details in the label.
+        """
+        ...

@@ -1,0 +1,44 @@
+# ARES v0.4.x — Render deployment Blueprint.
+#
+# NO secret values live in this file. Secrets are either injected from the
+# managed database resource (ARES_PG_DSN) or marked sync:false so Luis sets
+# them once in the Render dashboard (never in GitHub).
+#
+# Migrations run in preDeployCommand through the official advisory-locked,
+# idempotent runner BEFORE the new version receives traffic; a migration
+# failure aborts the deploy. Down migrations are never executed here.
+
+services:
+  - type: web
+    name: ares-api
+    runtime: python
+    plan: starter
+    region: oregon
+    branch: main
+    autoDeployTrigger: commit
+    buildCommand: pip install --upgrade pip && pip install -e ".[api,postgres]"
+    preDeployCommand: python -m ares.facts.migrate
+    startCommand: uvicorn ares.api.app:create_app --factory --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: ARES_ENV
+        value: production
+      - key: ARES_FACT_STORE
+        value: postgres
+      - key: ARES_PG_DSN
+        fromDatabase:
+          name: ares-postgres
+          property: connectionString
+      - key: ARES_SEC_USER_AGENT
+        sync: false
+      - key: ARES_UI_USER
+        sync: false
+      - key: ARES_UI_PASSWORD
+        sync: false
+
+databases:
+  - name: ares-postgres
+    plan: basic-256mb
+    postgresMajorVersion: "16"
