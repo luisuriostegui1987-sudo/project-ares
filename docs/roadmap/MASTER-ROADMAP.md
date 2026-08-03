@@ -44,7 +44,7 @@ not a trading bot; v1 remains paper-only.
 | 2 | Real SEC EDGAR ingestion; InstitutionalFact (ARES-FACT-001 subset); institutional comparability | v0.2.0 |
 | 3 | Persistent PostgreSQL Fact store; point-in-time reconstruction; restatements; concurrency-safe migrations | v0.3.0 |
 | 4 | Institutional FastAPI, ResearchService, append-only report persistence, web console, safe DOM/XSS hardening | v0.4.0 |
-| 5 | Render production deployment (Blueprint, pre-deploy migrations, Basic Auth, DB health probe) | PR #5 merged |
+| 5 | Render production deployment (Blueprint, pre-deploy migrations, Basic Auth, DB health probe) | **v0.4.0 LIVE on Render** — PostgreSQL connected and healthy; production health check passing |
 
 ## 4. Current priority
 
