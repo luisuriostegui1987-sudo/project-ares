@@ -2,7 +2,7 @@
 id: ARES-ANALYST-001
 title: Analyst research methodology
 status: Draft (pending CTO architecture review and CRO methodology review)
-version: 0.1.0
+version: 0.2.0
 owner: CKO
 governance: change only via pull request; merge only with Luis's authorization
 ---
@@ -11,10 +11,26 @@ governance: change only via pull request; merge only with Luis's authorization
 
 ## 1. Authorization Gate (normative, first)
 
-No research on any analyst may begin until Luis explicitly authorizes that
-analyst by name. Until then, analyst directories contain ONLY structural
-README files. Populating a template with real or invented content before
-authorization is a governance violation.
+Investor research may begin ONLY after **all** of the following are true, in
+order:
+
+1. ARES-KNOWLEDGE-001 is approved.
+2. ARES-ANALYST-001 (this specification) is approved.
+3. The CTO approves the Knowledge Library architecture.
+4. The CRO approves the methodology.
+5. Luis authorizes the Knowledge Library merge.
+6. The Analyst Roadmap
+   ([Master Roadmap §6](../roadmap/MASTER-ROADMAP.md)) is completed and
+   approved.
+7. The ARES Analyst Framework
+   ([Master Roadmap §7](../roadmap/MASTER-ROADMAP.md)) is implemented and
+   validated.
+8. Luis explicitly authorizes research for the selected analyst, by name.
+
+Until every gate passes, analyst directories contain ONLY structural README
+files; every listed analyst — including Benjamin Cowen — is a CANDIDATE, not
+an authorized subject. Populating a template with real or invented content
+before gate 8 is a governance violation.
 
 ## 2. Research phases (once authorized)
 
