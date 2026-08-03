@@ -2,7 +2,7 @@
 id: ARES-ARCHITECTURE-ANALYST-FRAMEWORK-001
 title: Analyst Framework — implementation architecture
 status: Research Draft — Pending CTO Review
-version: 1.1
+version: 1.2
 owner: CTO implementation engineering
 governance: architecture only — no implementation until CTO approval; change only via pull request; merge only with Luis's authorization
 ---
@@ -39,16 +39,14 @@ Inspected directly from the repository (not from prior conversation):
   authorization), ARES-KNOWLEDGE-001 (knowledge package layout), the
   methodology standards (signals, sources, uncertainty), MASTER-ROADMAP §§6–9
   (sequencing: Framework = Phase 6; Council = Phase 9; 24/7 agents = Phase 10).
-- **Institutional dependency (per CTO direction)**: ARES-ANALYST-FRAMEWORK-001
-  has been drafted and reviewed in conversation by the CKO but is NOT yet
-  preserved in the repository. It must be added — from the CKO-provided
-  exact source, never reconstructed from this document — to the Knowledge
-  Library branch (Draft PR #6) at
-  `docs/specifications/ARES-ANALYST-FRAMEWORK-001.md` with status
-  "Research Draft — Pending CRO Review and Luis Approval". Once preserved,
-  this architecture must reference it by that path and its version, and be
-  re-validated against it before any implementation. Until then, the interim
-  institutional basis is MASTER-ROADMAP §7 plus ARES-ANALYST-001 v0.2.0.
+- **Institutional dependency (RESOLVED)**: the CKO-authored Institutional
+  Analyst Operating Contract is preserved verbatim at
+  [`docs/specifications/ARES-ANALYST-FRAMEWORK-001.md`](../specifications/ARES-ANALYST-FRAMEWORK-001.md),
+  **Version 1.0, Status: Research Draft — Pending Institutional Review**
+  (sha256 `cac6ad75…711df9`). This architecture is revalidated against that
+  exact contract in §0.1 below and must be revalidated again if the contract
+  version changes. Supporting bases: MASTER-ROADMAP §7 and
+  ARES-ANALYST-001 v0.2.0.
 - **Branch dependency**: the specifications this document cites live on the
   unmerged Draft PR #6 branch; this document therefore stacks on that branch
   and cannot merge before it.
@@ -56,6 +54,44 @@ Inspected directly from the repository (not from prior conversation):
   is LIVE on Render; PostgreSQL is connected and healthy; the production
   health check passes. Deployment is complete and is not part of this
   sprint.
+
+### 0.1 Revalidation against ARES-ANALYST-FRAMEWORK-001 v1.0 — compatibility matrix
+
+Axis-by-axis revalidation against the preserved contract (§ numbers refer to
+the contract). Verdicts: **COMPATIBLE** (architecture satisfies the axis as
+designed), **COMPATIBLE (split)** (the axis is satisfied jointly by this
+architecture and the documentary process/Knowledge Library, with the split
+stated), **GAP** (architecture change proposed; semantics NOT modified —
+awaiting CTO authorization per review instruction 9).
+
+| # | Contract axis | Verdict | Basis / proposed smallest correction |
+|---|---|---|---|
+| 1 | Institutional Identity (§3) | COMPATIBLE | Analyst = declarative Knowledge Package with no deployment, write or approval authority; the engine executes, the service persists. The package structurally CANNOT deploy code, approve anything, or conceal uncertainty (ABSTAIN/contradictions are engine-enforced). |
+| 2 | Authority Granted (§6) | COMPATIBLE | Granted powers are exactly what packages express: attributed claims, verified-fact consumption, labeled interpretations, candidate principles/rules/signals, escalatable unknowns — all as data for institutional review. |
+| 3 | Authority Withheld (§7) | COMPATIBLE | No recommendation output type exists; packages cannot write to any store (the service appends assessments); no production-approval field exists for an analyst to set; merging/deployment are outside the framework entirely. |
+| 4 | Required Inputs (§8) | **GAP-1** | `AnalystInput` carries entity/time/facts/reports but NOT the contract's assignment envelope (assignment ID, question, decision context, scope/exclusions, evidence standard, review path). **Proposed smallest correction (additive, pending CTO authorization): add a required `AssignmentRef` structure to `AnalystInput`; the engine refuses evaluation without it** — mirroring §8's "pause and request clarification". |
+| 5 | Analytical Lifecycle (§9) | COMPATIBLE (split) | Phases 1–4 (intake, design, acquisition, extraction) are the documentary research process (ARES-ANALYST-001 + Library templates) that BUILDS the knowledge base; phases 5–9 have mechanical counterparts in the engine (evaluation, classification, contradiction/uncertainty surfacing, synthesis into the assessment); phase 10 handoff = institutional review of packages and assessments. No phase is skipped; the split is by design. |
+| 6 | Knowledge Classes (§5.3) | COMPATIBLE (mapping) | Verified Fact/Claim → existing models; Signal/Rule → candidate signals + package rules (research-only); Uncertainty → missing_evidence + unknowns; Contradiction → contradiction records. **Interpretation** maps to claims classed Reasonable Inference with mandatory reasoning — the mapping table will be normative in the contract types; no semantic change required. |
+| 7 | Evidence Obligations (§10) | COMPATIBLE (split) | Sourcing, independence and staleness assessment are research-time obligations (Library standards, grades A–E, tiers T1–T5); the engine enforces the runtime consequences: only graded/usable facts reach rules, everything else surfaces as insufficient — "Insufficient evidence" is a first-class outcome. |
+| 8 | Confidence & Workflow Status (§11) | **GAP-2** | The contract requires a High/Medium/Low/Unknown confidence level AND a workflow status on every material output. Architecture v1.1 carries RULE 17 class + optional rubric score, and package-level lifecycle, but no per-output workflow status. **Proposed smallest correction (additive, pending CTO authorization): assessments carry (a) a deterministic mapping from rubric output to the contract's four confidence levels and (b) a `workflow_status` field, defaulting to `Research Candidate`; `Approved Knowledge` settable only by the external review chain, never by the engine.** |
+| 9 | Candidate Signals & Rules (§12) | **GAP-3** | The contract requires 15 candidate fields and the explicit status `Research Candidate — Not Production`. Package rules carry id/version/params/citations/failure modes, and the Library's signal/decision-rule templates cover the remainder — but the architecture does not yet REQUIRE the linkage. **Proposed smallest correction (pending CTO authorization): the KnowledgePackageValidator rejects any rule/signal that does not reference a complete candidate record in the knowledge base, and every emitted signal carries `Research Candidate — Not Production` until the CRO/CTO/Quant chain records otherwise.** |
+| 10 | Contradiction Protocol (§13) | COMPATIBLE (split) | Record richness (dates, regime changes, attempted reconciliations, owner) lives in the Library's contradiction template; the engine guarantees propagation, preservation of both sides, downgrades, and that resolution never happens by preference (only a new documented record resolves). |
+| 11 | Unknowns & Missing Information (§14) | COMPATIBLE | ABSTAIN outcomes + missing_evidence entries name exactly what is missing; no gap is ever filled with an unstated assumption (packages cannot express assumptions outside declared parameters). |
+| 12 | Required Deliverables (§15) | COMPATIBLE (split) | The §15 handoff package is the documentary deliverable (templates cover every listed artifact); the runtime deliverable (assessment) contains the machine-side subset with full attribution and citations. |
+| 13 | Quality Gates (§16) | COMPATIBLE (split) | Mechanically checkable gates (classification separation, integrity of ids/links, governance status present, reproducibility metadata) are enforced by the KnowledgePackageValidator and assessment invariants; judgment gates (scope, independence, currency assessment) remain human review, as the contract intends. |
+| 14 | Institutional Interfaces (§17) | COMPATIBLE | The architecture's validation chain (CTO implementation → CRO validation → Quant validation → Luis) and the publishing flow match §17's sequence verbatim; the framework adds no interface that bypasses any function's retained authority. |
+| 15 | Escalation Requirements (§18) | COMPATIBLE (split) | The engine's fail-closed behaviors (refusal on contract mismatch, ABSTAIN on missing evidence, contradiction records) are the runtime form of "stop and escalate"; human escalation triggers (ambiguity, conflicts of interest, advice requests) belong to the documentary process and are unimpeded. |
+| 16 | Version Control (§19) | COMPATIBLE | Semver on contract/package/vocabulary; append-only registry events record change, author and review linkage; git preserves history; a semantic change forces a NEW version/id everywhere — historical versions always preserved. |
+| 17 | Completion Standard (§20) | COMPATIBLE (split) | Documentary completion is gated before packaging; the architecture adds the machine guarantee that an assessment is reproducible bit-for-bit without interviewing anyone (input digest + pinned versions). |
+| 18 | Breach of Contract (§21) | COMPATIBLE | Several breaches become structurally impossible (fabricated evidence — packages cannot invent inputs; presenting candidates as approved — no approval field is analyst-writable; recommendations — no such output type); the rest remain detectable via append-only audit trails. |
+| 19 | Effective-State Notice (§23) | COMPATIBLE | This architecture treats the contract as Research Draft; nothing becomes effective until the contract is approved and merged, and implementation remains blocked until CTO approval of this document. |
+
+**Summary**: 16 axes compatible (7 with an explicitly stated split between
+engine and documentary process), **3 additive gaps (GAP-1 AssignmentRef,
+GAP-2 confidence-level mapping + workflow_status, GAP-3 candidate-record
+linkage + Research-Candidate labeling)**. No gap requires reinterpreting the
+contract; all three corrections are additive to the architecture and are
+NOT applied — they await explicit CTO authorization.
 
 ## 1. What is an Analyst inside the software?
 
