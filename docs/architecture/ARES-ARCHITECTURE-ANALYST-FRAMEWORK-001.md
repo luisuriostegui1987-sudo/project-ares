@@ -2,7 +2,7 @@
 id: ARES-ARCHITECTURE-ANALYST-FRAMEWORK-001
 title: Analyst Framework — implementation architecture
 status: Research Draft — Pending CTO Review
-version: 1.0
+version: 1.1
 owner: CTO implementation engineering
 governance: architecture only — no implementation until CTO approval; change only via pull request; merge only with Luis's authorization
 ---
@@ -39,21 +39,36 @@ Inspected directly from the repository (not from prior conversation):
   authorization), ARES-KNOWLEDGE-001 (knowledge package layout), the
   methodology standards (signals, sources, uncertainty), MASTER-ROADMAP §§6–9
   (sequencing: Framework = Phase 6; Council = Phase 9; 24/7 agents = Phase 10).
-- **Dependency gap (reported, not papered over)**: a specification named
-  `ARES-ANALYST-FRAMEWORK-001` does not exist in the repository. The
-  institutional basis for this architecture is MASTER-ROADMAP §7 plus
-  ARES-ANALYST-001. If the CKO later issues ARES-ANALYST-FRAMEWORK-001,
-  this document must be re-validated against it before implementation.
+- **Institutional dependency (per CTO direction)**: ARES-ANALYST-FRAMEWORK-001
+  has been drafted and reviewed in conversation by the CKO but is NOT yet
+  preserved in the repository. It must be added — from the CKO-provided
+  exact source, never reconstructed from this document — to the Knowledge
+  Library branch (Draft PR #6) at
+  `docs/specifications/ARES-ANALYST-FRAMEWORK-001.md` with status
+  "Research Draft — Pending CRO Review and Luis Approval". Once preserved,
+  this architecture must reference it by that path and its version, and be
+  re-validated against it before any implementation. Until then, the interim
+  institutional basis is MASTER-ROADMAP §7 plus ARES-ANALYST-001 v0.2.0.
 - **Branch dependency**: the specifications this document cites live on the
   unmerged Draft PR #6 branch; this document therefore stacks on that branch
   and cannot merge before it.
+- **Operational state (for accuracy; out of Sprint-6 scope)**: ARES v0.4.0
+  is LIVE on Render; PostgreSQL is connected and healthy; the production
+  health check passes. Deployment is complete and is not part of this
+  sprint.
 
 ## 1. What is an Analyst inside the software?
 
-An Analyst is **NOT code**. An Analyst is a versioned, immutable
-**Knowledge Package** — declarative data derived from the analyst's
-`docs/analysts/<name>/` knowledge base — executed by ONE shared, generic
-engine:
+**Institutional rule (normative, CTO-refined):**
+
+> Analyst methodology is declarative by default. Analyst packages may not
+> ship arbitrary executable business logic. New executable primitives,
+> adapters or calculation operators require separate framework-level
+> architecture review, versioning, tests and governance approval.
+
+An Analyst is therefore a versioned, immutable **Knowledge Package** —
+declarative data derived from the analyst's `docs/analysts/<name>/`
+knowledge base — executed by ONE shared, generic engine:
 
 ```
 Analyst = AnalystDescriptor            (identity, version, provenance)
@@ -63,11 +78,68 @@ Analyst = AnalystDescriptor            (identity, version, provenance)
         + ConfidenceRubric             (deterministic scoring table)
 ```
 
-Rules reference a **closed vocabulary of rule primitives** (threshold,
-ratio-comparison, trend-over-period, cross-metric-guard, …) implemented once
+Rules reference a **closed vocabulary of rule primitives** implemented once
 inside the framework. Adding analyst N+1 is therefore *configuration plus
 documented knowledge, never new architecture* (MASTER-ROADMAP §7) — and
 never new business logic to review.
+
+### 1.1 The declarative boundary and primitive governance
+
+**What belongs in declarative analyst configuration** — identity and
+provenance metadata; principle records citing knowledge-base documents; rule
+instances, each exactly `(primitive_id@version, typed parameters, input
+requirements, citations)`; confidence rubric tables; thresholds and metric
+references. Nothing else: no expressions, no formulas, no code in any form.
+
+**What belongs in the generic execution engine** — input-snapshot
+construction, rule scheduling, primitive dispatch, epistemic bookkeeping
+(weakest-link classes, downgrades, ABSTAIN handling), assessment assembly,
+deterministic explanation rendering, persistence handoff. The engine is
+analyst-agnostic by construction.
+
+**What qualifies as a framework primitive** — a named, semver-versioned,
+side-effect-free, deterministic operator implemented inside the framework
+(`primitives/`), with: a typed parameter schema, declared input-fact
+requirements (including comparability constraints), explicit ABSTAIN
+conditions, an explanation template, and exhaustive tests with golden
+vectors. Primitives are framework code and receive framework-level review —
+never analyst-package content.
+
+**How specialized methodologies request a new primitive** — quantitative,
+technical, macro or on-chain methodologies that need an operator the
+vocabulary lacks submit a **Primitive Proposal**: motivation citing the
+analyst's documented methodology, a formal deterministic definition,
+parameter schema, input requirements, failure modes, and test vectors. The
+proposal passes CTO architecture review, CRO methodology review and
+governance approval before implementation and registration. Until the
+primitive exists, dependent rules ABSTAIN with a missing-capability record —
+they never inline a workaround.
+
+**How primitive additions preserve determinism and backward compatibility** —
+primitives are pure functions over typed inputs; additions are new registry
+entries that cannot alter existing behavior; a semantic change to an
+existing primitive is FORBIDDEN — changed behavior is a NEW primitive id.
+Packages pin exact `primitive_id@version` pairs, so an addition can never
+reinterpret an existing rule.
+
+**How analyst packages are prevented from executing arbitrary code** —
+packages are pure data validated against a closed schema at load time; the
+loader rejects any field outside the schema; there is no eval/exec/import
+path from package content; primitives are resolved exclusively by id from
+the in-repo registry; the package's content hash is pinned at registration,
+so post-validation tampering is detectable.
+
+**How the primitive registry is versioned append-only** — the registry is an
+event log of registrations `(primitive_id, version, definition hash,
+review record)`; deprecation is an event, removal does not exist; the
+vocabulary version increases monotonically and is recorded on every
+assessment.
+
+**How existing analysts remain reproducible after primitive upgrades** —
+every assessment records the analyst package version, the contract version,
+and the exact `primitive_id@version` used per rule, plus the input digest;
+historical primitive versions remain resolvable forever, so any past
+assessment can be re-executed bit-for-bit.
 
 ## 2. Interfaces every analyst must satisfy (conceptual contract)
 
