@@ -54,10 +54,11 @@ may interrupt it.
 ### Current state (accurate as of this revision)
 
 - Phase 1 — Knowledge Library: **materialized and published** (Draft PR #6).
-- Phase 2 — CTO Knowledge Library review: **CHANGES REQUESTED** (this
-  revision responds to it).
-- CRO methodology review: **pending**.
-- Luis approval: **pending**.
+- Phase 2 — CTO Knowledge Library review: **APPROVED FOR CRO REVIEW**, with
+  one condition: Luis performs a complete reading of ARES-KNOWLEDGE-001 and
+  ARES-ANALYST-001 before the final merge.
+- CRO methodology review: **in progress**.
+- Luis reading of the two core specifications and approval: **pending**.
 - Merge: **blocked**.
 - Investor research: **blocked**.
 
@@ -66,8 +67,8 @@ may interrupt it.
 | # | Phase | Exit criterion | Status |
 |---|---|---|---|
 | 1 | Knowledge Library materialization | Structure, specs, templates published in a Draft PR | ✅ done |
-| 2 | CTO Knowledge Library review | CTO approves architecture | 🔄 CHANGES REQUESTED |
-| 3 | CRO methodology review | CRO approves methodology | ⏳ pending |
+| 2 | CTO Knowledge Library review | CTO approves architecture | ✅ approved for CRO review |
+| 3 | CRO methodology review | CRO approves methodology | 🔄 in review |
 | 4 | Luis authorization & merge | Knowledge Library on `main` | ⛔ blocked |
 | 5 | Analyst Roadmap completion | §6 completed and approved | ⏳ pending |
 | 6 | Plug-in Analyst Framework | Framework implemented and validated (§7) | ⏳ pending |

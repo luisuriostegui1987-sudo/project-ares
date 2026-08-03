@@ -18,7 +18,7 @@ governance: change only via pull request; merge only with Luis's authorization
 ### Current state
 
 Phase 1 (Knowledge Library): materialized and published · Phase 2 (CTO
-review): **CHANGES REQUESTED** · CRO review: pending · Luis approval:
+review): **approved for CRO review** · CRO review: **in progress** · Luis reading of the two core specs + approval:
 pending · Merge: **blocked** · Investor research: **blocked**.
 
 Every item consumes the institutional API as the single entry point and
