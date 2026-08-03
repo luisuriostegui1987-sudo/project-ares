@@ -22,7 +22,7 @@ library records the METHODOLOGY that governs research itself.
 
 | Area | Path | Contents |
 |---|---|---|
-| Specifications | [specifications/](specifications/README.md) | ARES-KNOWLEDGE-001, ARES-ANALYST-001 and the methodology standards |
+| Specifications | [specifications/](specifications/README.md) | ARES-KNOWLEDGE-001, ARES-ANALYST-001, ARES-ANALYST-FRAMEWORK-001 and the methodology standards |
 | Templates | [templates/](templates/README.md) | The 10 reusable research artifact templates |
 | Analysts | [analysts/](analysts/README.md) | Empty, structured knowledge bases per analyst (research blocked) |
 | Roadmap | [roadmap/](roadmap/README.md) | Authorized ARES OS product roadmap and the permanent continuous-improvement principle |
