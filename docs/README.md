@@ -26,6 +26,7 @@ library records the METHODOLOGY that governs research itself.
 | Templates | [templates/](templates/README.md) | The 10 reusable research artifact templates |
 | Analysts | [analysts/](analysts/README.md) | Empty, structured knowledge bases per analyst (research blocked) |
 | Roadmap | [roadmap/](roadmap/README.md) | Authorized ARES OS product roadmap and the permanent continuous-improvement principle |
+| Architecture | [architecture/](architecture/README.md) | Technical contracts translating specifications into software architecture |
 
 ## Conventions (normative)
 
