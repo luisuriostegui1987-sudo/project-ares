@@ -2,7 +2,7 @@
 id: ARES-ROADMAP-MASTER
 title: PROJECT ARES — MASTER ROADMAP (OFFICIAL)
 status: Official — normative North Star (merged to main via PR #6 with Luis's authorization)
-version: 1.1.0
+version: 1.2.0
 owner: Luis
 governance: change only via pull request; merge only with Luis's authorization
 ---
