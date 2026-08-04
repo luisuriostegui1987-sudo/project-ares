@@ -49,9 +49,11 @@ not a trading bot; v1 remains paper-only.
 
 ## 4. Current priority
 
-**Sprint 7 — implementation of the Institutional Knowledge Package Framework
-(Phase 6 below), per the approved architecture.** Nothing else may interrupt
-it. Sprint 7 has **not yet started**.
+**Resolve Phase 5 (Analyst Roadmap completion — §6 completed and approved).**
+Sprint 7 — the implementation of the Institutional Knowledge Package
+Framework (Phase 6 below) — is the next sprint, but it has **not started**
+and may not begin until Phase 5 is resolved or a roadmap-order amendment is
+formally approved per §10. Nothing else may interrupt this sequence.
 
 ### Current state (accurate as of this revision)
 
@@ -62,10 +64,17 @@ it. Sprint 7 has **not yet started**.
 - CTO review: **PASS** · CRO review: **PASS** · Luis authorization:
   **COMPLETE**.
 - ARES remains **v0.4.0**; **v0.5.0 is reserved** for the executable
-  Institutional Knowledge Package Framework delivered by Sprint 7.
+  Institutional Knowledge Package Framework delivered by Sprint 7. Sprint 7:
+  **not started** — it may not begin until Phase 5 (Analyst Roadmap
+  completion) is resolved or a roadmap-order amendment is formally approved
+  per §10.
 - The Institutional Knowledge Package architecture
   (ARES-ARCHITECTURE-ANALYST-FRAMEWORK-001) is **approved and must not be
-  redesigned**.
+  redesigned**. The Institutional Analyst Operating Contract
+  (ARES-ANALYST-FRAMEWORK-001) remains a Preserved Verbatim Institutional
+  Document with status **Research Draft — Pending Institutional Review**; its
+  formal activation is a further gate before framework execution becomes
+  effective.
 - Investor research: **prohibited** until the executable framework exists and
   Luis explicitly authorizes the selected investor by name. Benjamin Cowen
   remains only the planned **first candidate** after framework completion and
@@ -79,8 +88,8 @@ it. Sprint 7 has **not yet started**.
 | 2 | CTO Knowledge Library review | CTO approves architecture | ✅ done — CTO PASS |
 | 3 | CRO methodology review | CRO approves methodology | ✅ done — CRO PASS |
 | 4 | Luis authorization & merge | Knowledge Library on `main` | ✅ done — merged (PR #6 `a57fbc2`, PR #7 `8b911ef`) |
-| 5 | Analyst Roadmap completion | §6 completed and approved | ✅ done — §6 merged as part of this roadmap (PR #6) |
-| 6 | Plug-in Analyst Framework | Framework implemented and validated (§7) | 🔜 next — Sprint 7 (architecture approved and merged; implementation **not started**; v0.5.0 reserved) |
+| 5 | Analyst Roadmap completion | §6 completed and approved | ⏳ pending |
+| 6 | Plug-in Analyst Framework | Framework implemented and validated (§7) | ⏳ pending — Sprint 7 scope (architecture approved and merged; implementation **not started**; v0.5.0 reserved; gated on Phase 5 resolution or a formally approved roadmap-order amendment per §10) |
 | 7 | First Institutional Analyst | Candidate researched under full methodology; CTO implementation, CRO validation, Quant validation all pass (§8) | ⏳ pending |
 | 8 | Production Analyst | First analyst active in production research | ⏳ pending |
 | 9 | Analyst Council | Several independently validated analysts operating as a council (§9) | ⏳ pending |

@@ -20,9 +20,11 @@ governance: change only via pull request; merge only with Luis's authorization
 Sprints 1–6: **complete and closed** · Knowledge Library: **merged** to
 `main` (PR #6, `a57fbc2`) · Institutional Analyst Framework architecture:
 **merged** to `main` (PR #7, `8b911ef`) · CTO review: **PASS** · CRO review:
-**PASS** · Luis authorization: **COMPLETE** · Next: **Sprint 7** —
-Institutional Knowledge Package Framework implementation (**not started**;
-v0.5.0 reserved) · Investor research: **prohibited** until the executable
+**PASS** · Luis authorization: **COMPLETE** · Phase 5 (Analyst Roadmap
+completion): **pending** · Next sprint: **Sprint 7** — Institutional
+Knowledge Package Framework implementation (**not started**; v0.5.0
+reserved; gated on Phase 5 resolution or a formally approved roadmap-order
+amendment) · Investor research: **prohibited** until the executable
 framework exists and Luis explicitly authorizes the selected investor.
 
 Every item consumes the institutional API as the single entry point and
