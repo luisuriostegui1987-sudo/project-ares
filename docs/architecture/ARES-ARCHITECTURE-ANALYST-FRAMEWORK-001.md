@@ -2,7 +2,7 @@
 id: ARES-ARCHITECTURE-ANALYST-FRAMEWORK-001
 title: Analyst Framework — implementation architecture
 status: Research Draft — Pending CTO Review
-version: 1.3
+version: 1.4
 owner: CTO implementation engineering
 governance: architecture only — no implementation until CTO approval; change only via pull request; merge only with Luis's authorization
 ---
@@ -281,7 +281,13 @@ ARES-ANALYST-FRAMEWORK-001). It contains:
 architectural mirror of the contract's "pause and request clarification"
 duty: a consequential assumption is never chosen silently. Every persisted
 `AnalystAssessment` records its AssignmentRef for full attribution.
-(Architecture only; no implementation in this sprint.)
+
+**Provenance, not just completeness (CRO Required Correction, v1.4)**: the
+Assignment ID MUST resolve to a recorded, append-only institutional intake
+event (the intake defined in §3.1, "(create) → REQUESTED"); the framework
+MUST refuse execution when the AssignmentRef cannot be resolved to such a
+record. A syntactically complete but never-issued AssignmentRef is therefore
+not executable. (Architecture only; no implementation in this sprint.)
 
 ## 5. Output contract
 
@@ -375,6 +381,38 @@ score exists only if the Institutional Knowledge Package defines a deterministic
 ConfidenceRubric, the class obeys weakest-link inheritance, and the rubric
 reference makes the number auditable. No rubric ⇒ class only. Never LLM
 judgment.
+
+### 12.1 Normative confidence crosswalk (CRO Required Correction, v1.4)
+
+The institutional contract (ARES-ANALYST-FRAMEWORK-001 §11.1) expresses
+confidence as **High / Medium / Low / Unknown**; ARES expresses it as
+**RULE 17 knowledge class + evidence grade (A–E)**. The following mapping is
+the **authoritative, normative crosswalk** between the two vocabularies and
+is frozen input to the implementation phase (contract types will encode it
+verbatim):
+
+| §11.1 level | Minimum ARES requirement (deterministic) |
+|---|---|
+| **High** | Verified Fact (grade A), OR High Confidence with grade A **and** recorded independent corroboration; in both cases no unresolved material contradiction |
+| **Medium** | High Confidence (grade A–B) not meeting the High row |
+| **Low** | Reasonable Inference (grade ≤ C); any Speculation or Opinion (grades D–E always cap here) |
+| **Unknown** | Knowledge class Unknown, or evidence insufficient to assign a defensible grade |
+
+Normative rules:
+
+1. **Knowledge may NEVER become stronger than its weakest supporting
+   evidence, regardless of vocabulary.** Weakest-link inheritance applies on
+   both sides of the crosswalk: a derived statement takes the minimum of its
+   supports' RULE 17 classes AND the minimum of their §11.1 levels.
+2. An unresolved material contradiction caps the statement at **Low** —
+   consistent with the uncertainty standard's downgrade to at most
+   Reasonable Inference (CONFLICTED).
+3. The mapping is total and surjective: every classified statement resolves
+   to exactly one §11.1 level; no statement may carry a §11.1 level that the
+   table does not derive from its class and grade.
+4. Movement up the table requires new evidence meeting the higher row's
+   requirement, documented per §5.4 of the institutional contract — never
+   relabeling.
 
 ## 13. Registration
 
