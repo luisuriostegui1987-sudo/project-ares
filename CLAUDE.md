@@ -8,9 +8,15 @@ An AI-native investment **research** system. **Not** a trading bot. Paper-only i
 v1. A human (Luis) makes every capital decision.
 
 ## Source of truth
-- **GitHub (this repo)** — all software: code, tests, CI, engineering docs.
-- **Google Drive** — governance & architecture: Constitution, ADRs (ARES-999),
-  ARES-### specs, research. Do not duplicate governance here; link to it.
+- **GitHub (this repo) is the single institutional source of truth** — code,
+  tests, CI, governance, architecture, specifications, institutional research
+  and project history.
+- **`docs/` is the canonical Knowledge Library** (specifications, templates,
+  analyst knowledge bases, architecture, roadmap).
+- External files, chats and Google Drive documents are **non-canonical** until
+  reviewed and merged into this repository via pull request.
+- Institutional decisions must be preserved in repository documentation.
+- No agent may treat chat history as more authoritative than `main`.
 
 ## Golden rules (from the Constitution — never violate)
 1. No AI moves capital. Any capital action requires explicit human approval.
@@ -35,6 +41,8 @@ mypy ares          # types must be clean
 ## Where things live
 - `ares/models/` — domain models (Fact, Event, Signal, Evidence, Thesis, Decision, RiskResult).
 - `tests/` — pytest suite (governance validators, invalid-input, serialization).
+- `docs/` — canonical Knowledge Library (specifications, templates, analyst
+  knowledge bases, architecture, roadmap).
 
 ## How to contribute (short form; full detail in CONTRIBUTING.md)
 - Branch from `main`; small, focused changes.
@@ -43,6 +51,8 @@ mypy ares          # types must be clean
 - Never push directly to `main`. Never commit secrets.
 
 ## Decisions
-Architectural/strategic decisions are **ADRs in Google Drive** (ARES-999 addenda),
-not in code comments. If a code change embodies a decision, reference the ADR id
-in the PR description. Rule: *if it isn't in the Decision Log, it doesn't officially exist.*
+Architectural/strategic decisions are **repository documentation** (`docs/` and
+PR history), reviewed and merged via pull request — not code comments and not
+chat. If a code change embodies a decision, reference the governing repository
+document in the PR description. Rule: *if it isn't preserved in the repository,
+it doesn't officially exist.*

@@ -1,7 +1,7 @@
 ---
 id: ARES-DOCS-SPECS
 title: Specifications index
-status: Draft (pending CTO architecture review and CRO methodology review)
+status: Active (CTO and CRO reviews passed; merged to main with Luis's authorization)
 version: 0.1.1
 owner: CKO
 governance: change only via pull request; merge only with Luis's authorization

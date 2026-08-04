@@ -1,7 +1,7 @@
 ---
 id: ARES-ARCHITECTURE-ANALYST-FRAMEWORK-001
 title: Analyst Framework — implementation architecture
-status: Research Draft — Pending CTO Review
+status: Active — CTO and CRO reviews passed; merged to main via PR #7 with Luis's authorization; approved architecture (do not redesign); implementation reserved for Sprint 7
 version: 1.4
 owner: CTO implementation engineering
 governance: architecture only — no implementation until CTO approval; change only via pull request; merge only with Luis's authorization
@@ -47,9 +47,10 @@ Inspected directly from the repository (not from prior conversation):
   exact contract in §0.1 below and must be revalidated again if the contract
   version changes. Supporting bases: MASTER-ROADMAP §7 and
   ARES-ANALYST-001 v0.2.0.
-- **Branch dependency**: the specifications this document cites live on the
-  unmerged Draft PR #6 branch; this document therefore stacks on that branch
-  and cannot merge before it.
+- **Branch dependency (RESOLVED)**: the specifications this document cites
+  were merged to `main` via PR #6 (`a57fbc2`); this document was merged to
+  `main` via PR #7 (`8b911ef`) in the approved institutional order. All cited
+  specifications and this architecture now live on `main`.
 - **Operational state (for accuracy; out of Sprint-6 scope)**: ARES v0.4.0
   is LIVE on Render; PostgreSQL is connected and healthy; the production
   health check passes. Deployment is complete and is not part of this
@@ -84,7 +85,7 @@ Required Change in this revision).
 | 16 | Version Control (§19) | COMPATIBLE | Semver on contract/package/vocabulary; append-only registry events record change, author and review linkage; git preserves history; a semantic change forces a NEW version/id everywhere — historical versions always preserved. |
 | 17 | Completion Standard (§20) | COMPATIBLE (split) | Documentary completion is gated before packaging; the architecture adds the machine guarantee that an assessment is reproducible bit-for-bit without interviewing anyone (input digest + pinned versions). |
 | 18 | Breach of Contract (§21) | COMPATIBLE | Several breaches become structurally impossible (fabricated evidence — packages cannot invent inputs; presenting candidates as approved — no approval field is analyst-writable; recommendations — no such output type); the rest remain detectable via append-only audit trails. |
-| 19 | Effective-State Notice (§23) | COMPATIBLE | This architecture treats the contract as Research Draft; nothing becomes effective until the contract is approved and merged, and implementation remains blocked until CTO approval of this document. |
+| 19 | Effective-State Notice (§23) | COMPATIBLE | This architecture treats the contract as Research Draft; nothing becomes effective until the contract is approved and merged. (State reconciliation: this document passed CTO and CRO review and was merged to `main` via PR #7; implementation remains gated on Sprint 7 authorization by Luis AND on the formal activation of ARES-ANALYST-FRAMEWORK-001, whose preserved status remains Research Draft — Pending Institutional Review.) |
 
 **Summary (v1.3)**: **19 of 19 axes compatible** — 7 via the explicitly
 stated engine/documentary split, and the three former gaps RESOLVED by the
