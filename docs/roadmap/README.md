@@ -2,7 +2,7 @@
 id: ARES-DOCS-ROADMAP
 title: Authorized ARES OS roadmap
 status: Active (CTO and CRO reviews passed; merged to main with Luis's authorization)
-version: 0.2.0
+version: 0.2.1
 owner: CKO
 governance: change only via pull request; merge only with Luis's authorization
 ---
@@ -21,7 +21,9 @@ Sprints 1–6: **complete and closed** · Knowledge Library: **merged** to
 `main` (PR #6, `a57fbc2`) · Institutional Analyst Framework architecture:
 **merged** to `main` (PR #7, `8b911ef`) · CTO review: **PASS** · CRO review:
 **PASS** · Luis authorization: **COMPLETE** · Phase 5 (Analyst Roadmap
-completion): **pending** · Next sprint: **Sprint 7** — Institutional
+completion): **pending** — Draft artifact:
+[ARES-ANALYST-ROADMAP-001.md](ARES-ANALYST-ROADMAP-001.md) (awaiting CTO
+review, CRO review and Luis's approval) · Next sprint: **Sprint 7** — Institutional
 Knowledge Package Framework implementation (**not started**; v0.5.0
 reserved; gated on Phase 5 resolution or a formally approved roadmap-order
 amendment) · Investor research: **prohibited** until the executable
@@ -34,6 +36,7 @@ not a milestone.
 | Item | Document |
 |---|---|
 | **PROJECT ARES — MASTER ROADMAP (OFFICIAL)** | [MASTER-ROADMAP.md](MASTER-ROADMAP.md) |
+| Institutional Analyst Roadmap (Phase 5 artifact — Draft) | [ARES-ANALYST-ROADMAP-001.md](ARES-ANALYST-ROADMAP-001.md) |
 | ARES OS | [ares-os.md](ares-os.md) |
 | Web application | [web-application.md](web-application.md) |
 | iPhone application | [iphone-application.md](iphone-application.md) |
