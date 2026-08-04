@@ -1,7 +1,7 @@
 ---
 id: ARES-DOCS-ARCHITECTURE
 title: Architecture documents index
-status: Draft (pending CTO architecture review)
+status: Active (CTO and CRO reviews passed; merged to main with Luis's authorization)
 version: 0.1.0
 owner: CTO implementation engineering
 governance: change only via pull request; merge only with Luis's authorization

@@ -1,23 +1,22 @@
 # Contributing to ARES
 
-Professional workflow for a small team (1 human + 2 AI collaborators). Keep it
+Professional workflow for a small team (1 human + AI collaborators). Keep it
 lightweight; every rule below earns its place.
 
-## 1. Roles & ownership (RACI)
+## 1. Roles & ownership
 
-| Activity | Luis (CIO) | ChatGPT (CTO/Architect) | Claude (Principal Eng / Reviewer) |
-|---|---|---|---|
-| Architecture design | Approves | **Owns** | Reviews, challenges |
-| ADRs (Drive) | Approves | Authors design ADRs | Authors/records, keeps consistent |
-| Writing code | — | Authors (arch-heavy modules) | **Authors + implements** |
-| Code review | Spot-checks | Reviews | **Owns review** |
-| Approving merges to `main` | **Owns** (final human gate) | — | Recommends |
-| Numbers / risk thresholds | **Owns** (sole approver) | Proposes | Flags implementability |
-| Documentation / data dictionary | Approves | Contributes | **Owns** |
-| Technical decisions | Final say | Proposes | Proposes, reviews |
+| Role | Responsibility |
+|---|---|
+| **CKO** | Constructs and preserves institutional knowledge (specifications, templates, analyst knowledge bases) |
+| **Publishing engineer** | Verifies, commits and publishes changes through pull requests |
+| **CTO** | Reviews architecture and implementation |
+| **CRO** | Reviews methodology, epistemics and institutional risk |
+| **Quant Research** | Validates testable rules when applicable |
+| **Luis** | Final authorization to merge; the **only capital decision-maker** |
 
-Two AIs never edit the same file simultaneously. Coordination is **artifact-mediated**:
-the repo, PRs, and ADRs are the shared memory — not chat.
+Governance sequence for every change: publish via PR → CTO review → CRO
+review → **Luis authorizes merge**. Coordination is **artifact-mediated**: the
+repository, PRs and `docs/` are the shared memory — not chat.
 
 ## 2. Branch strategy (trunk-based)
 - `main` is always releasable and **protected** (no direct pushes).
@@ -26,18 +25,20 @@ the repo, PRs, and ADRs are the shared memory — not chat.
 
 ## 3. Commits (Conventional Commits)
 `type(scope): summary` — types: `feat, fix, refactor, test, docs, chore, ci`.
-Small, atomic commits. Reference ADR ids when a commit embodies a decision.
+Small, atomic commits. Reference the governing repository document when a
+commit embodies a decision.
 
 ## 4. Pull requests
 - One logical change per PR; keep them small and reviewable.
-- PR description: what changed, why, ADR refs, test evidence.
+- PR description: what changed, why, governing-doc refs, test evidence.
 - **CI must be green** (pytest + ruff + mypy) before review.
 - **≥1 human approval (Luis) required to merge.** AI approvals are advisory.
 - Squash-merge to keep `main` history clean.
 
 ## 5. Code review checklist
-- Consistency with Constitution + ARES-015 (Data Dictionary).
-- Traceability: numbers sourced; decisions link to ADRs.
+- Consistency with the golden governance rules (CLAUDE.md) and the
+  specifications in `docs/specifications/`.
+- Traceability: numbers sourced; decisions link to governing repository docs.
 - Tests cover happy path + invalid input; governance validators intact.
 - No secrets, no scope creep, no undocumented decisions.
 

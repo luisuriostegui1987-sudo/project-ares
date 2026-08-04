@@ -1,7 +1,7 @@
 ---
 id: ARES-DOCS-ROADMAP
 title: Authorized ARES OS roadmap
-status: Draft (pending CTO architecture review and CRO methodology review)
+status: Active (CTO and CRO reviews passed; merged to main with Luis's authorization)
 version: 0.2.0
 owner: CKO
 governance: change only via pull request; merge only with Luis's authorization
@@ -17,9 +17,13 @@ governance: change only via pull request; merge only with Luis's authorization
 
 ### Current state
 
-Phase 1 (Knowledge Library): materialized and published · Phase 2 (CTO
-review): **approved for CRO review** · CRO review: **in progress** · Luis reading of the two core specs + approval:
-pending · Merge: **blocked** · Investor research: **blocked**.
+Sprints 1–6: **complete and closed** · Knowledge Library: **merged** to
+`main` (PR #6, `a57fbc2`) · Institutional Analyst Framework architecture:
+**merged** to `main` (PR #7, `8b911ef`) · CTO review: **PASS** · CRO review:
+**PASS** · Luis authorization: **COMPLETE** · Next: **Sprint 7** —
+Institutional Knowledge Package Framework implementation (**not started**;
+v0.5.0 reserved) · Investor research: **prohibited** until the executable
+framework exists and Luis explicitly authorizes the selected investor.
 
 Every item consumes the institutional API as the single entry point and
 inherits full research governance. The final entry is a PERMANENT principle,
