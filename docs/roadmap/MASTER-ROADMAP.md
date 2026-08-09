@@ -2,7 +2,7 @@
 id: ARES-ROADMAP-MASTER
 title: PROJECT ARES — MASTER ROADMAP (OFFICIAL)
 status: Official — normative North Star (merged to main via PR #6 with Luis's authorization)
-version: 1.2.0
+version: 1.3.0
 owner: Luis
 governance: change only via pull request; merge only with Luis's authorization
 ---
@@ -49,11 +49,14 @@ not a trading bot; v1 remains paper-only.
 
 ## 4. Current priority
 
-**Resolve Phase 5 (Analyst Roadmap completion — §6 completed and approved).**
-Sprint 7 — the implementation of the Institutional Knowledge Package
-Framework (Phase 6 below) — is the next sprint, but it has **not started**
-and may not begin until Phase 5 is resolved or a roadmap-order amendment is
-formally approved per §10. Nothing else may interrupt this sequence.
+**Execute Sprint 7 — Stage 1 (frozen scope) of the Institutional Knowledge
+Package Framework implementation (Phase 6 below).** Phase 5 (Analyst Roadmap
+completion) is **closed** — CTO/CRO reviewed, explicitly approved by Luis and
+preserved via the Phase 5 closure PR (`docs/governance/phase-5/`). Sprint 7
+has **started — Stage 1 under frozen scope** authorized by Luis (decisions
+L-1/L-3; start record in `docs/governance/sprint-7/start/`). Staging does not
+divide or reorder these phases: Phase 6 remains pending until the framework
+is fully implemented and validated. Nothing else may interrupt this sequence.
 
 ### Current state (accurate as of this revision)
 
@@ -65,9 +68,9 @@ formally approved per §10. Nothing else may interrupt this sequence.
   **COMPLETE**.
 - ARES remains **v0.4.0**; **v0.5.0 is reserved** for the executable
   Institutional Knowledge Package Framework delivered by Sprint 7. Sprint 7:
-  **not started** — it may not begin until Phase 5 (Analyst Roadmap
-  completion) is resolved or a roadmap-order amendment is formally approved
-  per §10.
+  **started — Stage 1 under frozen scope** (Luis decisions L-1/L-3; start
+  record in `docs/governance/sprint-7/start/`); `v0.5.0` remains reserved
+  for the complete validated framework (Luis decision L-8 at Sprint close).
 - The Institutional Knowledge Package architecture
   (ARES-ARCHITECTURE-ANALYST-FRAMEWORK-001) is **approved and must not be
   redesigned**. The Institutional Analyst Operating Contract
@@ -89,7 +92,7 @@ formally approved per §10. Nothing else may interrupt this sequence.
 | 3 | CRO methodology review | CRO approves methodology | ✅ done — CRO PASS |
 | 4 | Luis authorization & merge | Knowledge Library on `main` | ✅ done — merged (PR #6 `a57fbc2`, PR #7 `8b911ef`) |
 | 5 | Analyst Roadmap completion | §6 completed and approved | ✅ done — [ARES-ANALYST-ROADMAP-001.md](ARES-ANALYST-ROADMAP-001.md) completed; CTO reviewed and CRO reviewed (final reviews preserved in `docs/governance/phase-5/`); explicitly approved by Luis; closure materialized through the Phase 5 closure PR. Approval authorizes no research, no Sprint 7 start and no framework activation |
-| 6 | Plug-in Analyst Framework | Framework implemented and validated (§7) | ⏳ pending — Sprint 7 scope (architecture approved and merged; implementation **not started**; v0.5.0 reserved; gated on Phase 5 resolution or a formally approved roadmap-order amendment per §10) |
+| 6 | Plug-in Analyst Framework | Framework implemented and validated (§7) | ⏳ pending — Sprint 7 scope (architecture approved and merged; Phase 5 resolved; **Sprint 7 started — Stage 1 under frozen scope** per `docs/governance/sprint-7/start/`; remaining stages require new express authorizations from Luis; v0.5.0 reserved) |
 | 7 | First Institutional Analyst | Candidate researched under full methodology; CTO implementation, CRO validation, Quant validation all pass (§8) | ⏳ pending |
 | 8 | Production Analyst | First analyst active in production research | ⏳ pending |
 | 9 | Analyst Council | Several independently validated analysts operating as a council (§9) | ⏳ pending |
@@ -103,9 +106,10 @@ on.
 ## 6. Analyst Roadmap
 
 > The detailed institutional Analyst Roadmap (15 controlled slots, cohorts,
-> lifecycle, authority matrix) is designed in
-> [ARES-ANALYST-ROADMAP-001.md](ARES-ANALYST-ROADMAP-001.md) — **Draft**;
-> Phase 5 remains pending until it is reviewed, approved by Luis and merged.
+> lifecycle, authority matrix) is defined in
+> [ARES-ANALYST-ROADMAP-001.md](ARES-ANALYST-ROADMAP-001.md) — **Active**:
+> CTO/CRO reviewed and explicitly approved by Luis at Phase 5 closure
+> (record in `docs/governance/phase-5/`).
 > Its approval never authorizes research on any candidate.
 
 1. Candidate selection — **Benjamin Cowen is only a CANDIDATE** until every
