@@ -1,7 +1,7 @@
 ---
 id: ARES-ANALYST-ROADMAP-001
 title: Institutional Analyst Roadmap — first cohort of 15 controlled slots
-status: Draft — Phase 5 artifact; pending Publishing Engineer verification, CTO review, CRO review and Luis's approval
+status: Active — Phase 5 artifact; CTO review passed, CRO review passed, explicitly approved by Luis (`ARES-ANALYST-ROADMAP-001 — APPROVED FOR PHASE 5 CLOSURE`, 2026-08-08; review record preserved in docs/governance/phase-5/). This approval closes Phase 5 only — research remains BLOCKED, Sprint 7 remains not started and the framework remains inactive
 version: 0.1.0
 owner: CKO
 governance: change only via pull request; merge only with Luis's authorization; approval of this roadmap does NOT authorize research on any candidate

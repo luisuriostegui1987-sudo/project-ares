@@ -88,7 +88,7 @@ formally approved per §10. Nothing else may interrupt this sequence.
 | 2 | CTO Knowledge Library review | CTO approves architecture | ✅ done — CTO PASS |
 | 3 | CRO methodology review | CRO approves methodology | ✅ done — CRO PASS |
 | 4 | Luis authorization & merge | Knowledge Library on `main` | ✅ done — merged (PR #6 `a57fbc2`, PR #7 `8b911ef`) |
-| 5 | Analyst Roadmap completion | §6 completed and approved | ⏳ pending — Draft artifact [ARES-ANALYST-ROADMAP-001.md](ARES-ANALYST-ROADMAP-001.md) exists; completion requires CTO review, CRO review, Luis's approval and merge |
+| 5 | Analyst Roadmap completion | §6 completed and approved | ✅ done — [ARES-ANALYST-ROADMAP-001.md](ARES-ANALYST-ROADMAP-001.md) completed; CTO reviewed and CRO reviewed (final reviews preserved in `docs/governance/phase-5/`); explicitly approved by Luis; closure materialized through the Phase 5 closure PR. Approval authorizes no research, no Sprint 7 start and no framework activation |
 | 6 | Plug-in Analyst Framework | Framework implemented and validated (§7) | ⏳ pending — Sprint 7 scope (architecture approved and merged; implementation **not started**; v0.5.0 reserved; gated on Phase 5 resolution or a formally approved roadmap-order amendment per §10) |
 | 7 | First Institutional Analyst | Candidate researched under full methodology; CTO implementation, CRO validation, Quant validation all pass (§8) | ⏳ pending |
 | 8 | Production Analyst | First analyst active in production research | ⏳ pending |
